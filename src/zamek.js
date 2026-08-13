@@ -124,6 +124,11 @@ function zamkniVariantu(v, info) {
     typ: info.typ || '',
     popis: info.popis || dokumentPopis(info.typ),
     kdo: info.kdo || '',
+    /* Ze které šablony dokument vznikl (#139): { zdroj:'server'|'mistni',
+     * verze, otisk, nazev }. U serverové šablony je tím doložené, že nabídka
+     * odešla z centrálně řízené verze; „mistni" je razítko tisku mimo ni
+     * (měkký režim nebo práce bez serveru) a nejde dodatečně zapřít. */
+    sablona: info.sablona || null,
   };
   if (variantaUzamcena(v)) {
     if (!Array.isArray(v.zamek.tisky)) v.zamek.tisky = [];
@@ -171,7 +176,11 @@ function odemkniVariantu(v, opts) {
 /* DPH v otisku po částech (audit 1. 8. 2026, N3) – stejné klíče jako
  * v POROVNANI_METRIKY. Starší zámky nesou dphSazba/dphKc z doby jediné
  * sazby; zůstávají, jak byly pořízeny – otisk se zpětně nepřepisuje. */
+/* Do otisku patří obě slevy zvlášť (#134, 12. 8. 2026): kdyby se hlídala jen
+ * jedna, dalo by se u odeslané nabídky přepsat procento u té druhé a otisk by
+ * mlčel. */
 const ZAMEK_OTISK_POLE = ['ockZaklad', 'slevaPct', 'slevaKc', 'ockPoSleve',
+                          'projZaklad', 'slevaProjPct', 'slevaProjKc',
                           'projCelkem', 'celkemBezDph',
                           'dphOckSazba', 'dphOckKc', 'dphProjSazba', 'dphProjKc',
                           'celkemSDph', 'priplatky'];

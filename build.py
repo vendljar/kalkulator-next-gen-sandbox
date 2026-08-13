@@ -28,7 +28,7 @@ CORE = ['build_info.js',
         'docxgen.js', 'xlsx.js',
         'dokumenty.js', 'sleva.js', 'schvalovani.js', 'zaokrouhleni.js', 'marze.js', 'kontroly.js', 'ares.js', 'poznamky.js', 'protokol.js', 'firma.js', 'zpracovatel.js', 'nabidka.js', 'nabidka_proj.js', 'kryci.js', 'kryci_proj.js',
         'cenik.js', 'cenik_stari.js', 'katalog.js', 'prepisy.js', 'slovnik.js',
-        'konfigurace.js', 'nastaveni_db.js', 'program.js', 'ukazkove.js', 'prava.js', 'zobrazeni.js']
+        'konfigurace.js', 'sablony_online.js', 'nastaveni_db.js', 'program.js', 'ukazkove.js', 'prava.js', 'zobrazeni.js']
 UI = ['ui/common.js', 'ui/zakulozeni_ui.js', 'ui/kalk_ock.js', 'ui/detail_ui.js', 'ui/techspec_ui.js', 'ui/specdata_ui.js',
       'ui/kryci_ui.js', 'ui/kryci_proj_ui.js', 'ui/kalk_proj.js', 'ui/nabidka_proj_ui.js',
       'ui/cenik_stari_ui.js', 'ui/cenik_ui.js',
@@ -80,11 +80,18 @@ html = (root / 'src/app_template.html').read_text()
 import base64
 ikona_svg = (root / 'src' / 'ikona.svg')
 ikona_b64 = base64.b64encode(ikona_svg.read_bytes()).decode('ascii') if ikona_svg.exists() else ''
+# Favicon je od 12. 8. 2026 vlastní obrázek (znak dolaru), ne zmenšenina loga:
+# v liště prohlížeče se z 16 px loga stejně nic nepozná. Když soubor chybí,
+# spadne se zpátky na ikonu aplikace, ať karta nikdy nezůstane bez obrázku.
+favicon_svg = (root / 'src' / 'favicon.svg')
+favicon_b64 = (base64.b64encode(favicon_svg.read_bytes()).decode('ascii')
+               if favicon_svg.exists() else ikona_b64)
 
 html = (html.replace('/*__CORE__*/', core).replace('/*__JEKLY__*/', jekly)
             .replace('/*__UI__*/', ui).replace('__VERZE__', 'v' + ver)
             .replace('__SESTAVENO__', datetime.date.today().isoformat())
-            .replace('__IKONA_B64__', ikona_b64))
+            .replace('__IKONA_B64__', ikona_b64)
+            .replace('__FAVICON_B64__', favicon_b64))
 
 (root / 'dist').mkdir(exist_ok=True)
 (root / 'dist/kalkulacka.html').write_text(html)
