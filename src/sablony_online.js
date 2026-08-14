@@ -27,7 +27,7 @@
 
 /* Základní typy drží krok s registrem dokumentů (dokumenty.js) a s obrazovkou
  * Nastavení → Šablony. Jazykové mutace se ukládají jako `typ_jazyk`. */
-const SABLONY_ONLINE_TYPY = ['nabidka', 'nabidkaProj', 'sod'];
+const SABLONY_ONLINE_TYPY = ['nabidka', 'nabidkaProj', 'sod', 'sodProj', 'plnaMoc'];
 const SABLONY_ONLINE_JAZYKY = ['en', 'de', 'fr'];
 
 /* Strop velikosti souboru v base64. Buffered požadavek Netlify unese 6 MB

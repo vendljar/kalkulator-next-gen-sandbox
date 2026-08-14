@@ -525,7 +525,12 @@ function nastSablony() {
     ${radek('nabidka', 'Šablona cenové nabídky OCK', 'používá se pro „Vytvořit nabídku (Word)" v Kalkulaci OCK')}
     ${radek('nabidkaProj', 'Šablona cenové nabídky PROJ (OVP-CN)',
       'používá se pro „Vytvořit nabídku PROJ (Word)" v Kalkulaci PROJ – je to jiný dokument než nabídka OCK')}
-    ${radek('sod', 'Šablona smlouvy o dílo (SoD)', 'připraveno pro generování SoD – čeká na právní znění')}
+    ${radek('sod', 'Šablona smlouvy o dílo — REALIZACE (OCK)',
+      'Sablona_SOD_REALIZACE.docx – strany, cena, podmínky a termíny přes symboly {{…}}')}
+    ${radek('sodProj', 'Šablona smlouvy o dílo — PROJEKČNÍ PRÁCE',
+      'Sablona_SOD_PROJEKCE.docx – strany, cena, sankce a platby po fázích přes symboly {{…}}')}
+    ${radek('plnaMoc', 'Šablona plné moci',
+      'Sablona_PLNA_MOC.docx – zmocnitel, nemovitost a firemní údaje přes symboly {{…}}')}
     <div class="note" style="margin-top:10px">Mutace vzniká překladem <b>pevného textu</b> šablony; nepřeložené fráze
       zůstanou česky a jsou v CSV k doplnění. <b>Hodnoty</b> dosazované do <code>{{…}}</code> se překládají zvlášť podle
       jazyka zvoleného v technické specifikaci. Vytváření mutací a export seznamů = <b>jen administrátor</b>.</div>`;

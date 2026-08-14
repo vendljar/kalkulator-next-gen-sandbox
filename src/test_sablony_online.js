@@ -27,6 +27,12 @@ const NE_DOCX_B64 = 'JVBERi0xLjQK' + 'A'.repeat(64);   // %PDF-1.4
 test('nabidka je platný typ', sablonaTypPlatny('nabidka'));
 test('nabidkaProj je platný typ', sablonaTypPlatny('nabidkaProj'));
 test('sod je platný typ', sablonaTypPlatny('sod'));
+/* SoD projekčních prací a plná moc (#142, 13. 8. 2026) — šablony smluv se
+ * řídí centrálně stejně jako nabídky; kdo by tiskl smlouvu ze staré verze,
+ * poslal by zákazníkovi jiné znění, než které prošlo právníkem. */
+test('sodProj je platný typ', sablonaTypPlatny('sodProj'));
+test('plnaMoc je platný typ', sablonaTypPlatny('plnaMoc'));
+test('mutace sodProj_en je platný typ', sablonaTypPlatny('sodProj_en'));
 test('jazyková mutace nabidka_en je platný typ', sablonaTypPlatny('nabidka_en'));
 test('jazyková mutace nabidkaProj_de je platný typ', sablonaTypPlatny('nabidkaProj_de'));
 test('vymyšlený typ neprojde', !sablonaTypPlatny('faktura'));
