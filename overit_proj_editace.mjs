@@ -231,7 +231,9 @@ const zobrazeni = await p.evaluate(([marze, zdroj]) => {
     sechd: sechd.length, sectot: sectot.length,
     tot: document.querySelectorAll('#proj-kalkulace tr.tot').length,
     sec: document.querySelectorAll('#page-proj tr.sec').length,
-    selectu: document.querySelectorAll('#proj-kalkulace select').length,
+    /* selecty .sekce-rezim (zobrazit/skrýt/srolovat, 19. 8. 2026) jsou záměr —
+     * kontrola míří na historické rolovací seznamy SAZEB u položek */
+    selectu: document.querySelectorAll('#proj-kalkulace select:not(.sekce-rezim)').length,
     /* Název sekce smí v pruhu stát sám. Hledat v něm číslici by nešlo —
      * „KOLAUDACE (pro 1 ks výtahu)" ji má přímo v názvu –, takže se porovnává
      * rovnou s tím, jak se sekce jmenuje v zadání. */
@@ -257,6 +259,7 @@ const zobrazeni = await p.evaluate(([marze, zdroj]) => {
       if (prazdna < 0) return null;
       const s = PJ.sekce[prazdna].polozky[0];
       const zaloha = JSON.stringify(s);
+      delete s.vyrazeno;                       // výchozí zaměření je od 18. 8. vyřazené
       if (s.typ === 'hod') s.hodiny = 10; else s.cenaPrepis = 10000;
       const v = vypocetProj(PJ, PC).sekce[prazdna];
       Object.assign(s, JSON.parse(zaloha));
@@ -289,8 +292,10 @@ ok(`a je to globální přirážka (${zobrazeni.prmText.slice(0, 80)})`,
    /Globální přirážka/.test(zobrazeni.prmText) && !/Globální sleva/.test(zobrazeni.prmText));
 ok('pod výpočtem PROJ stojí sekce Sleva na nabídku', zobrazeni.slevaDole);
 ok('pod výpočtem PROJ stojí sekce Obchodní zaokrouhlení', zobrazeni.zaokrDole);
-ok(`sekce jdou hned za výpočtem, před souhrnem (${zobrazeni.poradiKaret})`,
-   /proj-kalkulace,proj-sleva,proj-zaokr,proj-souhrn/.test(zobrazeni.poradiKaret));
+/* Od 17. 8. 2026 stojí SLEVA až POD souhrnem (zadání J. V.): obchodník napřed
+ * vidí, z čeho cena vzešla, a teprve pak z ní slevuje. */
+ok(`karty jdou v pořadí kalkulace → zaokrouhlení → souhrn → sleva (${zobrazeni.poradiKaret})`,
+   /proj-kalkulace,proj-zaokr,proj-souhrn,proj-sleva/.test(zobrazeni.poradiKaret));
 ok('sleva projekce se zadává v kartě pod výpočtem projekce', zobrazeni.slevaProjVKarte);
 /* Od 4. 8. 2026 karta v Kalkulaci PROJ ukazuje POUZE projekční práce – zadání:
  * „do kalkulace ock patří pouze část týkající se výtahové šachty, část týkající

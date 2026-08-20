@@ -35,13 +35,15 @@ function syncVarianta() {
   ZO = v.data.zaokr; ZOP = v.data.zaokrProj;
   // trvalé (katalogové) položky ceníku → do zadání; idempotentní, páruje přes kid
   katalogAplikuj(KATALOG, Z);
+  // totéž pro PROJ (19. 8. 2026): trvalé položky ceníku PROJ → do zadání PROJ
+  if (typeof projKatalogAplikuj === 'function') projKatalogAplikuj(PC, PJ);
 }
 syncVarianta();
 
 /* ---------- nastavení aplikace (ozubené kolo, jen admin) ---------- */
 const NAST = {
   jeAdmin: true,               // dnes je vše admin; přepínač role je v Nastavení
-  tabViditelnost: { kalk: true, detail: true, spec: true, specdata: true, kryci: true, proj: true, kryciproj: true, cenik: true, cenikproj: true, zakazka: true, schvalovani: true },
+  tabViditelnost: { kalk: true, detail: true, spec: true, specdata: true, kryci: true, proj: true, detailproj: true, kryciproj: true, cenik: true, cenikproj: true, zakazka: true, schvalovani: true },
   zobrazitNaklady: true,       // sloupce Náklad/Přirážka v tabulce kalkulace (jen admin)
   kpiViditelne: { naklad: false, hrubyZisk: false, sleva: false, marze: false }, // KPI v hlavičce viditelné i běžnému uživateli
   panel: 'obecne',             // aktivní vnitřní záložka Nastavení: obecne | uzivatele | slevy
@@ -151,11 +153,89 @@ function smiZobrazit(klic) {
  * třeba řádek tlačítek ceníku nemá smysl kreslit prázdný. */
 function smiZobrazitVse(klice) { return klice.every(k => smiZobrazit(k)); }
 
+/* ---------- režimy sekcí kalkulace: zobrazit / skrýt / srolovat ----------
+ * (zadání 19. 8. 2026 večer) Administrátor u každé sekce kalkulace OCK i
+ * PROJ malým selectem v nadpisu volí, jak sekci uvidí obchodník a vedoucí.
+ * Volba žije v matici zobrazení (NAST.zobrazeni.sekce, model zobrazeni.js),
+ * ukládá se na server (/api/zobrazeni) hned při změně — platí pro všechny
+ * a přežije obnovení stránky. Administrátor vidí vždy vše. */
+
+function sekceRezim(oblast, sekceKey) {
+  if (jeAdmin()) return 'zobrazit';                       // admin vidí vždy vše
+  if (typeof zobrazeniSekceVolba !== 'function') return 'zobrazit';
+  return zobrazeniSekceVolba(NAST.zobrazeni, oblast + '.' + sekceKey);
+}
+
+/* Rozbalení srolované sekce je stav TÉTO obrazovky, ne nastavení — proto
+ * obyčejný objekt v paměti, žádné úložiště. */
+const SEKCE_ROZBALENO = {};
+function sekceRozbal(klic) { SEKCE_ROZBALENO[klic] = !SEKCE_ROZBALENO[klic]; render(); }
+function sekceSbalena(oblast, sekceKey) {
+  return sekceRezim(oblast, sekceKey) === 'srolovat' && !SEKCE_ROZBALENO[oblast + '.' + sekceKey];
+}
+
+function sekceRezimSet(klic, volba) {
+  if (!jeAdmin() || typeof zobrazeniSekceNastav !== 'function') return;
+  if (!NAST.zobrazeni) NAST.zobrazeni = (typeof zobrazeniVychozi === 'function') ? zobrazeniVychozi() : {};
+  zobrazeniSekceNastav(NAST.zobrazeni, klic, volba);
+  /* hned na server, ať volba platí všem a přežije obnovení stránky; bez
+   * potvrzovacího okna — je to jedna volba u jedné sekce, ne celá matice */
+  if (typeof onlineApi === 'function' && typeof jeAdminOnline === 'function' && jeAdminOnline()) {
+    onlineApi('/api/zobrazeni', { matice: NAST.zobrazeni })
+      .then(() => { if (typeof onlineNactiZobrazeni === 'function') onlineNactiZobrazeni(); })
+      .catch(e => { if (typeof onlineZprava === 'function') {
+        onlineZprava('Volbu zobrazení sekce se nepodařilo uložit na server: ' + e.message, 'varovani'); render();
+      } });
+  } else if (typeof onlineZprava === 'function') {
+    onlineZprava('Volba zobrazení sekce platí jen do obnovení stránky – na server ji uloží až přihlášený administrátor.', 'varovani');
+  }
+  render();
+}
+
+/* Malý select do pravé části nadpisu sekce (kreslí se JEN administrátorovi). */
+function sekceRezimSelect(oblast, sekceKey) {
+  if (!jeAdmin() || typeof zobrazeniSekceVolba !== 'function') return '';
+  const klic = oblast + '.' + sekceKey;
+  const v = zobrazeniSekceVolba(NAST.zobrazeni, klic);
+  const opt = (val, text) => `<option value="${val}" ${v === val ? 'selected' : ''}>${esc(text)}</option>`;
+  return `<select class="mini noprint sekce-rezim" onchange="sekceRezimSet('${escJs(klic)}', this.value)"
+      title="jak tuhle sekci uvidí obchodník a vedoucí (administrátor vidí vždy vše)">
+      ${opt('zobrazit', 'zobrazit')}${opt('skryt', 'skrýt')}${opt('srolovat', 'srolovat')}</select>`;
+}
+
+/* Tlačítko rozbalení pro obchodníka/vedoucího u srolované sekce. */
+function sekceRozbalBtn(oblast, sekceKey) {
+  const klic = oblast + '.' + sekceKey;
+  const sbaleno = !SEKCE_ROZBALENO[klic];
+  return `<button class="mini noprint" onclick="sekceRozbal('${escJs(klic)}')"
+      title="${sbaleno ? 'rozbalit sekci' : 'srolovat sekci'}">${sbaleno ? '▸ rozbalit' : '▾ srolovat'}</button>`;
+}
+
 /* aktivní jazyk dokumentů a zkratka pro překlad (viz preklad.js) */
 function jazyk() { return NAST.jazyk || 'cz'; }
 function jazykSet(k) { NAST.jazyk = JAZYK_IDX[k] === undefined && k !== 'cz' ? 'cz' : k;
   if (typeof nastdbZmeneno === 'function') nastdbZmeneno(); render(); }
 function T(cz) { return tr(cz, jazyk()); }
+
+/* Jazyk TISKU dokumentů (#143). Nastavení → jazyk dokumentů platí pro celou
+ * aplikaci; tady jde o jednorázovou volbu „tuhle nabídku vytiskni anglicky"
+ * přímo u tlačítka, bez cesty do Nastavení a zpět. Prázdná hodnota = řídí se
+ * Nastavením (výchozí stav). Volba je jen pro relaci – neukládá se, aby po
+ * jedné německé nabídce neodcházely německy i všechny další. */
+let TISK_JAZYK = '';
+function tiskJazyk() { return TISK_JAZYK || jazyk(); }
+function tiskJazykNastav(v) {
+  TISK_JAZYK = (v && (v === 'cz' || JAZYK_IDX[v] !== undefined)) ? v : '';
+}
+function tiskJazykVyber() {
+  const moznosti = [['', 'dle Nastavení (' + jazyk().toUpperCase() + ')'],
+    ['cz', 'česky'], ['en', 'anglicky'], ['de', 'německy'], ['fr', 'francouzsky']];
+  return '<label class="note" style="margin-left:8px">Jazyk tisku:&nbsp;<select '
+    + 'onchange="tiskJazykNastav(this.value)" title="Jazyk tohoto výtisku – pevný text dodá jazyková mutace šablony, hodnoty přeloží aplikace">'
+    + moznosti.map(([v, t]) => '<option value="' + v + '"' + (v === TISK_JAZYK ? ' selected' : '')
+      + '>' + t + '</option>').join('')
+    + '</select></label>';
+}
 function kpiVidSet(k, v) { if (!NAST.kpiViditelne) NAST.kpiViditelne = {}; NAST.kpiViditelne[k] = !!v;
   if (typeof nastdbZmeneno === 'function') nastdbZmeneno(); render(); }
 
@@ -215,8 +295,15 @@ function sablonaProTisk(typ, lang) {
   return Promise.resolve(null);
 }
 /* je záložka viditelná? (skryté ceníky/detaily pro běžného uživatele) */
-const TAB_ZOBRAZENI_KLIC = { cenik: 'tab.cenik', cenikproj: 'tab.cenikproj', detail: 'tab.detail', specdata: 'tab.specdata' };
+/* Detail výpočtu PROJ (17. 8. 2026) se řídí TÝMŽ právem jako detail OCK —
+ * oba rozepisují nákladové sazby a rozdávat je zvlášť by jen mátlo. */
+const TAB_ZOBRAZENI_KLIC = { cenik: 'tab.cenik', cenikproj: 'tab.cenikproj', detail: 'tab.detail', detailproj: 'tab.detail', specdata: 'tab.specdata' };
 function tabViditelny(t) {
+  /* Nová záložka Detail výpočtu PROJ (17. 8. 2026): starší uložená nastavení
+   * ji neznají — zdědí proto viditelnost Detailu výpočtu OCK, ať nikomu,
+   * kdo detail vidí, nová záložka tiše nechybí. */
+  if (NAST.tabViditelnost.detailproj === undefined)
+    NAST.tabViditelnost.detailproj = NAST.tabViditelnost.detail !== false;
   if (!NAST.tabViditelnost[t]) return false;
   /* Dřív tu stálo `!NAST.jeAdmin && (cenik|cenikproj|detail|specdata)`.
    * Matice #136 se ve výchozím stavu chová stejně, jen jde po jednotlivých
@@ -251,6 +338,12 @@ const esc = s => String(s ?? '')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const escJs = s => esc(String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
 
+/* Nadpis bez informativních závorek. Od 17. 8. 2026 večer platí UŽŠÍ pravidlo
+ * (oprava zadání): u NÁZVŮ SEKCÍ kalkulace závorky ZŮSTÁVAJÍ („pro 1 ks
+ * výtahu", „celý projekt" jsou věcná informace) — bez závorek jsou jen
+ * nadpisy karet s interními čísly úkolů (Sleva, Obchodní zaokrouhlení). */
+const nazevBezZavorek = t => String(t || '').replace(/\s*\([^)]*\)/g, '').trim();
+
 function rootObj() { return { Z, C, OCK, PJ, PC, TS, ZAK, SL }; }
 function get(path) { return path.split('.').reduce((o, k) => o[k], rootObj()); }
 /* Zápis do dat aktivní varianty. Zámek (#34): do vytištěné = odeslané nabídky
@@ -277,6 +370,10 @@ function inp(path, opts = {}) {
     return `<div class="row"><label>${opts.l}</label><input type="text" style="width:170px;text-align:left" value="${esc(val)}" onchange="set('${path}', this.value)"><span class="u"></span></div>`;
   if (opts.type === 'date')
     return `<div class="row"><label>${opts.l}</label><input type="date" value="${esc(val)}" onchange="set('${path}', this.value)"><span class="u"></span></div>`;
+  if (opts.type === 'anone')   // rolovací Ano / Ne; ukládá se 1 / 0 (17. 8. 2026 večer)
+    return `<div class="row"><label>${opts.l}</label><select onchange="set('${path}', +this.value)">
+      <option value="1" ${val ? 'selected' : ''}>Ano</option>
+      <option value="0" ${!val ? 'selected' : ''}>Ne</option></select><span class="u"></span></div>`;
   if (opts.type === 'pct')   // uloženo jako desetinné číslo (0,30), zobrazeno a zadáváno v % (30)
     return `<div class="row"><label>${opts.l}</label><input type="number" step="${opts.step ?? 1}" value="${Math.round(val * 10000) / 100}" onchange="set('${path}', (+this.value) / 100)"><span class="u">%</span></div>`;
   return `<div class="row"><label>${opts.l}</label><input type="number" step="${step}" value="${val}" onchange="set('${path}', +this.value)"><span class="u">${u}</span></div>`;
@@ -327,22 +424,38 @@ function zakazkaHlavicka(ock) {
   zajistiProjHlavicku(ZAK);   // starší zakázka hlavičku PROJ ještě nemá – doplní se
   const opts = ZAK.varianty.map(v =>
     `<option value="${v.id}" ${v.id === akt.id ? 'selected' : ''}>${esc(v.nazev)}${v.ridici ? ' · řídící' : ''}</option>`).join('');
-  const txt = (path, label) => `<div class="row"><label>${label}</label>
+  const txt = (path, label, pill) => `<div class="row"><label>${label}${pill || ''}</label>
     <input type="text" value="${esc(get(path))}" onchange="set('${path}', this.value)"></div>`;
+
+  /* Kontrola duplicit (19. 8. 2026): číslo i název se porovnávají s online
+   * rejstříkem zakázek; kolize svítí štítkem hned u pole, kde se opravuje.
+   * Tvrdá pojistka je na serveru (cizí zakázku pod stejným číslem odmítne). */
+  const dup = (typeof zakazkaDuplicita === 'function' && typeof ONLINE_STAV !== 'undefined')
+    ? zakazkaDuplicita(ZAK, ONLINE_STAV.rejstrik, ONLINE_STAV.soubor)
+    : { cislo: '', nazevAkce: '' };
+  const dupPill = (soubor, co) => !soubor ? '' : `<span class="pill warn" style="margin-left:12px"
+    title="Stejné ${co} už má uložená zakázka ${esc(soubor)}. Server uložení pod cizím číslem odmítne — zvolte vlastní.">duplicitní</span>`;
+  const dupCislo = dupPill(dup.cislo, 'číslo nabídky');
+  const dupNazev = dupPill(dup.nazevAkce, 'název akce');
+
+  /* Hlavička je od 19. 8. 2026 JEDNA SPOLEČNÁ pro OCK i PROJ (zadání J. V.:
+   * „prostě je to stejná hlavička jako v OCK… to že svítí stejná hlavička
+   * v obou kalkulacích není problém"). Obě kalkulace čtou i píší tatáž pole
+   * ZAK.* — obchodník v každé záložce jen počítá odpovídající část. */
 
   /* IČO objednatele (zadání z 30. 7. 2026) – v hlavičce stojí mezi kontaktní
    * osobou a sazbou DPH. Vedle popisku svítí štítek, když je vyplněné IČO
    * neplatné podle kontrolní číslice. NEBLOKUJE se nic: pole jde uložit
    * i s chybou a nabídka se z něj vytiskne. Stejná chyba se objeví i v panelu
    * kontrol (#33) – tady je hned u pole, kde se opravuje. */
-  const icoRow = (path) => {
+  const icoRow = (path, kdeAres) => {
     const h = get(path);
     const spatne = (typeof icoVyplneno === 'function') && icoVyplneno(h) && !icoPlatne(h);
     const pill = spatne ? `<span class="pill warn" style="margin-left:12px"
       title="osm číslic a kontrolní číslice nesedí – zkontrolujte překlep">neplatné IČO</span>` : '';
     /* Pod polem stojí dotaz do rejstříku (#10). Je to nabídka, ne krok
      * v postupu – hlavička se dá vyplnit ručně a nabídka odejde i tak. */
-    const kde = path.indexOf('projHlavicka') >= 0 ? 'proj' : 'ock';
+    const kde = kdeAres || (path.indexOf('projHlavicka') >= 0 ? 'proj' : 'ock');
     const ares = (typeof aresRadek === 'function') ? aresRadek(kde) : '';
     return `<div class="row"><label>IČO objednatele${pill}</label>
       <input type="text" value="${esc(h)}" placeholder="8 číslic"
@@ -356,9 +469,9 @@ function zakazkaHlavicka(ock) {
     <select onchange="varAktivuj(this.value)" title="přepnout počítanou variantu">${opts}</select></div>`;
   const ridiciBtn = akt.ridici ? '' : `<div class="row"><label></label><button class="mini noprint" onclick="varRidici('${akt.id}')">nastavit jako řídící (platná je „${esc(rid.nazev)}")</button></div>`;
   const rezimRow = `<div class="row"><label>Režim výpočtu</label>
-    <select onchange="set('OCK.fixes', this.value==='fix')" title="přepnutí opravený / 1:1 jako Excel">
-      <option value="fix" ${OCK.fixes ? 'selected' : ''}>opravený</option>
-      <option value="compat" ${!OCK.fixes ? 'selected' : ''}>1:1 jako Excel</option></select></div>`;
+    <select onchange="set('OCK.fixes', this.value==='fix')" title="přepnutí Model 2 – opravený / Model 1 – 1:1 jako Excel">
+      <option value="fix" ${OCK.fixes ? 'selected' : ''}>Model 2 – opravený</option>
+      <option value="compat" ${!OCK.fixes ? 'selected' : ''}>Model 1 – 1:1 jako Excel</option></select></div>`;
   const datumRow = `<div class="row na-konec"><label>Datum vytvoření</label>
     <input type="date" value="${esc(ZAK.datum)}" onchange="set('ZAK.datum', this.value)"></div>`;
 
@@ -378,8 +491,7 @@ function zakazkaHlavicka(ock) {
     <select onchange="set('PC.dph', +this.value)">
       <option value="0.12" ${PC.dph === 0.12 ? 'selected' : ''}>12 % snížená</option>
       <option value="0.21" ${PC.dph === 0.21 ? 'selected' : ''}>21 % základní</option></select></div>`;
-  const datumRowProj = `<div class="row na-konec"><label>Datum vytvoření</label>
-    <input type="date" value="${esc(ZAK.projHlavicka.datum)}" onchange="set('ZAK.projHlavicka.datum', this.value)"></div>`;
+  /* datumRowProj zanikl 19. 8. 2026 — hlavička je jedna společná (ZAK.datum). */
 
   /* Globální přirážka PROJ (zadání 31. 7. 2026) – stejné místo i chování jako
    * v hlavičce OCK. Do 31. 7. se nastavovala jen v záložce Ceník nákladů PROJ,
@@ -408,10 +520,10 @@ function zakazkaHlavicka(ock) {
     // aby byla vidět při počítání nabídky; sazby zůstávají v Ceníku nákladů PROJ.
     const inner = `<div class="zak-head">
         <div class="zak-head-col">
-          ${txt('ZAK.projHlavicka.cislo', 'Číslo nabídky (CN)')}${txt('ZAK.projHlavicka.nazevAkce', 'Název akce')}${txt('ZAK.projHlavicka.adresa', 'Adresa stavby')}${datumRowProj}
+          ${txt('ZAK.cislo', 'Číslo nabídky (CN)', dupCislo)}${txt('ZAK.nazevAkce', 'Název akce', dupNazev)}${txt('ZAK.adresa', 'Adresa stavby')}${datumRow}
         </div>
         <div class="zak-head-col">
-          ${txt('ZAK.projHlavicka.objednatel', 'Objednatel')}${txt('ZAK.projHlavicka.kontakt', 'Kontaktní osoba')}${icoRow('ZAK.projHlavicka.ico')}${dphRowProj}
+          ${txt('ZAK.objednatel', 'Objednatel')}${txt('ZAK.kontakt', 'Kontaktní osoba')}${icoRow('ZAK.ico', 'proj')}${dphRowProj}
         </div>
         <div class="zak-head-col">${variantaRow}${ridiciBtn}${prirazkaRowProj}</div>
       </div>${puvodRadek}
@@ -428,7 +540,7 @@ function zakazkaHlavicka(ock) {
 
   const inner = `<div class="zak-head">
       <div class="zak-head-col">
-        ${txt('ZAK.cislo', 'Číslo nabídky (CN)')}${txt('ZAK.nazevAkce', 'Název akce')}${txt('ZAK.adresa', 'Adresa stavby')}${datumRow}
+        ${txt('ZAK.cislo', 'Číslo nabídky (CN)', dupCislo)}${txt('ZAK.nazevAkce', 'Název akce', dupNazev)}${txt('ZAK.adresa', 'Adresa stavby')}${datumRow}
       </div>
       <div class="zak-head-col">
         ${txt('ZAK.objednatel', 'Objednatel')}${txt('ZAK.kontakt', 'Kontaktní osoba')}${icoRow('ZAK.ico')}${dphRow}
@@ -482,11 +594,27 @@ function renderRezimPill() {
   const el = document.getElementById('rezimPill');
   if (!el) return;
   const opraveno = !!(OCK && OCK.fixes);
-  el.textContent = opraveno ? 'výpočet: opravený' : 'výpočet: 1:1 jako Excel (vč. jeho chyb)';
+  el.textContent = opraveno ? 'výpočet: Model 2 – opravený' : 'výpočet: Model 1 – 1:1 jako Excel (vč. jeho chyb)';
   el.className = 'pill' + (opraveno ? '' : ' warn');
   el.title = opraveno
-    ? 'Opravený režim: odstraněny známé chyby vzorců v šabloně. Výsledky se mohou lišit od starých nabídek počítaných v Excelu.'
-    : 'Režim shody s Excelem: vzorce se chovají přesně jako šablona VZOR, včetně jejích osmi zdokumentovaných chyb. Vhodné pro porovnání se staršími nabídkami. Přepnout lze v hlavičce kalkulace.';
+    ? 'Model 2 – opravený režim: odstraněny známé chyby vzorců v šabloně. Výsledky se mohou lišit od starých nabídek počítaných v Excelu.'
+    : 'Model 1 – režim shody s Excelem: vzorce se chovají přesně jako šablona VZOR, včetně jejích osmi zdokumentovaných chyb. Vhodné pro porovnání se staršími nabídkami. Přepnout lze v hlavičce kalkulace.';
+}
+
+/* Hlídka nasazené verze (19. 8. 2026): otevřená stránka × verze na serveru.
+ * Serverovou verzi plní online_ui ze sondy /api/zdravi (při startu a pak
+ * každých 10 minut) — porovnání dělá buildVerzeHlaska v build_info.js. */
+function renderVerzePill() {
+  const el = document.getElementById('verzePill');
+  if (!el) return;
+  const veta = (typeof buildVerzeHlaska === 'function')
+    ? buildVerzeHlaska(typeof buildVerze === 'function' ? buildVerze() : '',
+        (typeof ONLINE_STAV !== 'undefined' && ONLINE_STAV.serverVerze) || '')
+    : '';
+  el.style.display = veta ? '' : 'none';
+  el.textContent = veta;
+  el.title = veta ? 'Nasazení nové dávky otevřenou stránku samo nepřekreslí — obnovte ji. '
+    + 'Zakázka je uložená online, obnovením o nic nepřijdete.' : '';
 }
 
 function renderKalkHlavicka() {
@@ -528,7 +656,9 @@ function slevaCast(cast) {
     cast: proj ? 'proj' : 'ock',
     proj,
     obj: proj ? (typeof SLP !== 'undefined' ? SLP : null) : (typeof SL !== 'undefined' ? SL : null),
-    nazev: proj ? 'Sleva na nabídku PROJ (ZAK-10)' : 'Sleva na nabídku OCK (ZAK-10)',
+    /* Interní čísla úkolů v nadpisech skončila 17. 8. 2026 (zadání J. V.:
+     * „Odstraň v nadpisech sekcí informativní text v závorkách.") */
+    nazev: proj ? 'Sleva na nabídku PROJ' : 'Sleva na nabídku OCK',
     kotva: proj ? 'proj-sleva' : 'ock-sleva',
     /* Dva tvary, aby věty dávaly česky smysl: „cena projekčních prací"
      * (2. pád) a „platí jen pro projekční práce" (4. pád). */
@@ -866,9 +996,30 @@ function dokPatickaHtml(prekl) {
     ? '<br>' + esc(P('Vypracoval') + ': ' + kontakt) : ''}</div>`;
 }
 
+/* Podpisový blok obchodníka na KONEC tiskové nabídky (zadání 17. 8. 2026):
+ * jméno, funkce a kontakt PŘIHLÁŠENÉHO zpracovatele + sken podpisu s razítkem,
+ * je-li nahraný v profilu (Můj profil). Ve Wordu totéž dělají symboly ZPRAC_*
+ * a {{ZPRAC_PODPIS}} v šabloně — tohle je táž informace pro online tisk.
+ * Bez přihlášení se blok skládá z firemních údajů (offline build). */
+function dokPodpisHtml(prekl) {
+  const P = typeof prekl === 'function' ? prekl : (t => t);
+  const f = (typeof firmaAktualni === 'function') ? firmaAktualni() : null;
+  const p = (typeof zpracovatelPlaceholders === 'function') ? zpracovatelPlaceholders(f) : {};
+  const obr = (typeof zpracovatelObrazky === 'function') ? zpracovatelObrazky() : {};
+  if (!p.ZPRAC_JMENO && !obr.ZPRAC_PODPIS) return '';
+  const kontakt = [p.ZPRAC_FUNKCE, p.ZPRAC_TEL, p.ZPRAC_EMAIL].filter(Boolean).join(' · ');
+  return `<div class="podpis-blok" style="margin:28px 0 10px;page-break-inside:avoid">
+    <div style="font-size:11px;color:#6b7686;text-transform:uppercase;letter-spacing:.03em">${esc(P('Vypracoval'))}</div>
+    ${obr.ZPRAC_PODPIS ? `<img src="${esc(obr.ZPRAC_PODPIS)}" alt=""
+      style="max-height:84px;max-width:250px;display:block;margin:6px 0 2px">` : ''}
+    <div style="font-weight:700">${esc(p.ZPRAC_JMENO || '')}</div>
+    ${kontakt ? `<div style="font-size:12px;color:#42506b">${esc(kontakt)}</div>` : ''}
+  </div>`;
+}
+
 /* ---------- záložky ---------- */
 let TAB = 'kalk';
-const TABY = ['kalk', 'detail', 'spec', 'specdata', 'kryci', 'proj', 'kryciproj', 'cenik', 'cenikproj', 'zakazka', 'schvalovani'];
+const TABY = ['kalk', 'detail', 'spec', 'specdata', 'kryci', 'proj', 'detailproj', 'kryciproj', 'cenik', 'cenikproj', 'zakazka', 'schvalovani'];
 function prepniTab(t) {
   if (!tabViditelny(t)) t = 'kalk';
   TAB = t;
@@ -1028,6 +1179,9 @@ function render() {
     renderTelo();
     const b = document.getElementById('render-chyba');
     if (b) b.style.display = 'none';
+    /* heat mapa (#26) jede s uživatelem: každé překreslení aplikace
+     * překreslí i ji — jinak by po přepnutí záložky ukazovala staré prvky */
+    if (typeof heatPoRenderu === 'function') heatPoRenderu();
   } catch (e) {
     renderChybaBanner(e);
     renderPrihlaseniNejdriv();          // ať zůstane cesta k přihlášení
@@ -1056,10 +1210,12 @@ function renderTelo() {
   if (typeof renderUkazkoveLista === 'function') renderUkazkoveLista();
   if (typeof renderBuildLista === 'function') renderBuildLista();
   renderRezimPill();
+  renderVerzePill();
   renderKalkHlavicka();
   renderInputs(); renderOutputs();
   renderNabidkaOck();
   renderDetail();
+  if (typeof renderDetailProj === 'function') renderDetailProj();
   renderTechspec();
   renderSpecData();
   renderKryci();

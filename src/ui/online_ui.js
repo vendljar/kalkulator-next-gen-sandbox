@@ -32,6 +32,7 @@
 const ONLINE_STAV = {
   bezi: false,       // /api/zdravi odpovědělo → běžíme na serveru s funkcemi
   sondaHotova: false,// první dotaz na /api/zdravi už doběhl (ať tak, či tak)
+  serverVerze: '',   // verze nasazená na serveru (hlídka zastaralé stránky, 19. 8. 2026)
   nouzove: false,    // uživatel vědomě pokračuje bez přihlášení (server neběží)
   /* { email, jmeno, titul, funkce, telefon, role, podpis } po přihlášení.
    * Od 5. 8. 2026 (#145) nese účet i to, čím se člověk podepisuje pod cenovou
@@ -137,6 +138,8 @@ function onlineStart() {
   fetch('/api/zdravi').then(r => (r.ok ? r.json() : null)).then(z => {
     if (!z || !z.ok) return null;
     ONLINE_STAV.bezi = true;
+    ONLINE_STAV.serverVerze = z.verze || '';
+    onlineVerzeHlidkaStart();
     // Cookie relace mohla přežít obnovení stránky – zeptáme se, kdo jsme.
     return fetch('/api/ja', { credentials: 'same-origin' })
       .then(r => (r.ok ? r.json() : null))
@@ -144,6 +147,25 @@ function onlineStart() {
       .catch(() => null);
   }).catch(() => null)
     .then(() => { ONLINE_STAV.sondaHotova = true; if (typeof render === 'function') render(); });
+}
+
+/* Hlídka nasazené verze (19. 8. 2026): stránka zůstává otevřená celé dny,
+ * nasazení nové dávky ji samo nepřekreslí. Každých 10 minut se server zeptáme
+ * na verzi; rozdíl ukáže červený štítek v hlavičce (renderVerzePill). */
+let onlineVerzeCasovac = null;
+function onlineVerzeHlidkaStart() {
+  if (onlineVerzeCasovac) return;
+  onlineVerzeCasovac = setInterval(onlineVerzeTik, 10 * 60 * 1000);
+}
+function onlineVerzeTik() {
+  return fetch('/api/zdravi').then(r => (r.ok ? r.json() : null)).then(z => {
+    if (!z || !z.ok) return false;
+    const nova = z.verze || '';
+    if (nova === ONLINE_STAV.serverVerze) return false;
+    ONLINE_STAV.serverVerze = nova;
+    if (typeof renderVerzePill === 'function') renderVerzePill();
+    return true;
+  }).catch(() => false);
 }
 
 function onlinePrihlas() {
@@ -174,7 +196,9 @@ function onlinePoPrihlaseni(ja) {
    * překreslením, aby rozhraní hned napoprvé odpovídalo roli. Kdyby dorazila
    * později, obchodník by na okamžik zahlédl ceníky a pak by mu zmizely. */
   return Promise.all([onlineNactiProgram(), onlineNactiFirmu(), onlineNactiZobrazeni(), onlineNactiRejstrik(),
-                      onlineNactiSablony()])
+                      onlineNactiSablony(),
+                      /* analytika (#27): zjistit, jestli je sběr zapnutý, a nastartovat ho */
+                      typeof analytikaPoPrihlaseni === 'function' ? analytikaPoPrihlaseni() : Promise.resolve()])
     .then(() => { if (jeAdminOnline()) onlineZalohaAuto(); });
 }
 
@@ -193,6 +217,12 @@ function onlineOdhlas() {
     ONLINE_STAV.uzivatele = []; ONLINE_STAV.uzivateleNacteno = false; ONLINE_STAV.formHeslo = '';
     ONLINE_STAV.otisky = []; ONLINE_STAV.otiskyNacteno = false;
     ONLINE_STAV.sablonyRejstrik = null;   // šablony patří přihlášeným (#139)
+    /* analytika (#26): případná zapnutá heat mapa po odhlášení zhasne
+     * a sběr se zastaví (analytikaBezi bez přihlášení nic nepustí) */
+    if (typeof ANL !== 'undefined' && ANL.heat) {
+      ANL.heat = false;
+      if (typeof heatSmaz === 'function') { heatSmaz(); heatPanelSmaz(); }
+    }
     if (ONLINE_STAV.timer) { clearTimeout(ONLINE_STAV.timer); ONLINE_STAV.timer = null; }
     /* Když v aplikaci vládl online ceník, po odhlášení k němu už není zdroj –
      * návrat k ceníku ze sestavení, stejná úvaha jako při odpojení složky. */
@@ -231,7 +261,7 @@ function onlineVerzeInfo() {
 
 /* Zveřejnění online – stejná úvaha jako progZverejni nad složkou, jen zápis
  * jde na server (a server si admina i „beze změny" zkontroluje ještě sám). */
-function onlineZverejni() {
+function onlineZverejni(preddanaPozn) {
   if (!jeAdminOnline()) { onlineZprava('Zveřejnit ceník smí jen administrátor.', 'varovani'); render(); return Promise.resolve(false); }
   const ctx = progKontext('');
   if (ONLINE_STAV.db && programBezeZmeny(ONLINE_STAV.db, ctx)) {
@@ -242,7 +272,8 @@ function onlineZverejni() {
   const shrnuti = ONLINE_STAV.db
     ? (rozdily.length ? rozdily.length + ' změněných položek ceníku' : 'ceník beze změny, mění se katalog nebo slevy')
     : 'založení online databáze programu';
-  const pozn = prompt('Zveřejnit ceník aktivní varianty jako platný ONLINE pro celý program?\n\n'
+  const pozn = (typeof preddanaPozn === 'string') ? preddanaPozn
+    : prompt('Zveřejnit ceník aktivní varianty jako platný ONLINE pro celý program?\n\n'
     + shrnuti + '.\nOd této chvíle z něj budou vycházet nové nabídky všech přihlášených.\n'
     + 'Rozpracované nabídky se přepočítají samy, vytištěné (uzamčené) zůstanou beze změny.'
     + '\n\nČím se změna zdůvodňuje (nepovinné):', '');
@@ -1039,10 +1070,14 @@ function renderOnlineLista() {
   }
   /* Titul se ukazuje i v liště: člověk tak hned vidí, v jaké podobě půjde
    * jeho jméno do nabídky, a nemusí kvůli kontrole nic generovat. */
-  el.innerHTML = `<b>👤 ${esc(onlineJmenoSTitulem() || ONLINE_STAV.ja.email)}</b>
-    <span>(${esc(ONLINE_STAV.ja.role)})</span>
+  /* Pořadí a barvy (17. 8. 2026 večer): jméno s funkcí SVĚTLE ZELENĚ, ať je
+   * na tmavé liště vidět; přepínač heat mapy stojí až ZA „Změnit heslo". */
+  const funkce = ONLINE_STAV.ja.funkce ? ' · ' + ONLINE_STAV.ja.funkce : '';
+  el.innerHTML = `<b style="color:#86e8ad">👤 ${esc(onlineJmenoSTitulem() || ONLINE_STAV.ja.email)}${esc(funkce)}</b>
+    <span style="color:#86e8ad;opacity:.85">(${esc(ONLINE_STAV.ja.role)})</span>
     <button class="mini" onclick="otevriMujProfil()">Můj profil</button>
     <button class="mini" onclick="otevriZmenaHesla()">Změnit heslo</button>
+    ${typeof heatPrepinacHtml === 'function' ? heatPrepinacHtml() : ''}
     <button class="mini" onclick="onlineOdhlas()">Odhlásit</button>`;
 }
 

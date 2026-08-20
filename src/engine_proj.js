@@ -20,6 +20,7 @@ const DEFAULT_CENIK_PROJ = {  // HODNOTY VYNULOVÁNY pro GitHub (pripravit_githu
   sazby: { projektant: 0, statik: 0, zamereni: 0 },
   dopravaKmKc: 0,                    // Kč/km
   dopravaPausalKc: 0,                // paušál mimo Prahu (po Praze 0)
+  kurzEurKc: 0,                      // Kč/EUR — cizojazyčné dokumenty (#155); 0 = nenastaveno, tisk se zastaví
   fixy: {                            // fixní náklady po sekcích (Kč)
     pamatkari: 0,                    // PROJEDNÁNÍ STUDIE
     uzemniRozvoj: 0,
@@ -42,15 +43,20 @@ const DEFAULT_ZADANI_PROJ = {
    * Migrace v zakazka.js hodnotu ze starých zakázek převezme, aby se cena
    * nezměnila ani o korunu. */
   sekce: [
+    /* Výchozí rozsah (oprava nedorozumění 18. 8. 2026): NÁKLADY ZŮSTÁVAJÍ —
+     * zaměření si nese své hodiny (5 + 10) pořád, jen je ve výchozím stavu
+     * VYŘAZENÉ (odškrtnuté): nová zakázka počítá s celou studií, která
+     * zaměření obsahuje jako část 1, a separátní zaměření by se v nabídce
+     * duplikovalo. Jedno kliknutí na sekční zaškrtávátko ho vrátí i s hodinami. */
     { key: 'zamereni', nazev: 'ZAMĚŘENÍ', doprava: { km: 0, pausal: 0 }, prirazkaPct: null,
       polozky: [
-        { nazev: 'Zaměření', typ: 'hod', sazba: 'zamereni', hodiny: 5, rezerva: 0 },
-        { nazev: 'Výstup', typ: 'hod', sazba: 'projektant', hodiny: 10, rezerva: 0 },
+        { nazev: 'Zaměření', typ: 'hod', sazba: 'zamereni', hodiny: 5, rezerva: 0, vyrazeno: true },
+        { nazev: 'Výstup', typ: 'hod', sazba: 'projektant', hodiny: 10, rezerva: 0, vyrazeno: true },
       ] },
     { key: 'studie', nazev: 'ST – STUDIE', prirazkaPct: null,
       polozky: [
-        { nazev: 'Studie', typ: 'hod', sazba: 'projektant', hodiny: 0, rezerva: 0 },
-        { nazev: 'Konzultace', typ: 'hod', sazba: 'projektant', hodiny: 0, rezerva: 0 },
+        { nazev: 'Studie', typ: 'hod', sazba: 'projektant', hodiny: 24, rezerva: 0 },
+        { nazev: 'Konzultace', typ: 'hod', sazba: 'projektant', hodiny: 4, rezerva: 0 },
       ] },
     { key: 'projednani', nazev: 'PROJEDNÁNÍ STUDIE', prirazkaPct: null,
       polozky: [
@@ -172,14 +178,16 @@ function vypocetProj(zadani, cenik) {
     const marze = naklad * pct;
     const cena = naklad + marze;                      // nabídková cena sekce (bez dopravy)
     // Doprava: bez marže, přičítá se k ceně sekce (vzor: O12 = O8 + O11).
-    // Paušál „mimo Prahu" jde Z CENÍKU (dopravaPausalKc) a přičítá se jen
-    // se zaškrtnutým s.doprava.mimoPrahu — do 2. 8. 2026 položka ceníku do
-    // výpočtu vůbec nevstupovala a editovala se naprázdno. Ruční Kč pole
-    // (s.doprava.pausal) zůstává jako příplatek navíc; stará zakázka bez
-    // pole mimoPrahu se počítá na haléř stejně jako dřív.
+    // Příplatek „mimo Prahu" se od 17. 8. 2026 (rozhodnutí J. V.) POČÍTÁ ZE
+    // VZDÁLENOSTI: km / 60 × 1000 Kč — tedy hodina cesty při 60 km/h à 1 000 Kč.
+    // Pevný paušál z ceníku (dopravaPausalKc) do výpočtu nevstupuje: dvě
+    // nezávislá čísla pro jednu jízdu by se nevyhnutelně rozcházela a delší
+    // cesta má stát víc než kratší. Ruční Kč pole (s.doprava.pausal) zůstává
+    // jako příplatek navíc — nesou ho staré zakázky a jejich cena se změnit nesmí.
+    const km = s.doprava ? (+s.doprava.km || 0) : 0;
     const dopravaKc = s.doprava
-      ? (+s.doprava.km || 0) * c.dopravaKmKc
-        + (s.doprava.mimoPrahu ? (+c.dopravaPausalKc || 0) : 0)
+      ? km * c.dopravaKmKc
+        + (s.doprava.mimoPrahu ? km / 60 * 1000 : 0)
         + (+s.doprava.pausal || 0)
       : 0;
     const cenaSDopravou = cena + dopravaKc;

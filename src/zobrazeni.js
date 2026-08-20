@@ -117,6 +117,16 @@ const ZOBRAZENI_PRVKY = [
         + 'vidět, že je nabídka pod minimální marží (viz varovná lišta níž).',
   },
   {
+    klic: 'kalk.pridatPolozku', skupina: 'cisla', nazev: 'Přidávání vlastních položek do sekcí kalkulace',
+    kde: 'Kalkulace OCK i PROJ – tlačítko „+ přidat položku do sekce"',
+    popis: 'Vlastní řádek s názvem, množstvím/hodinami a jednotkovou cenou; platí jen pro otevřenou zakázku, ceník nemění.',
+    vychozi: { 'Obchodník': true, 'Vedoucí': true },
+    navrh: { 'Obchodník': true, 'Vedoucí': true },
+    proc: 'Zadání 19. 8. 2026: obchodník i vedoucí potřebují do nabídky doplnit práci, kterou ceník '
+        + 'nezná, aniž by čekali na administrátora. Zapsaná jednotková cena je cena té položky '
+        + 'v této zakázce — nákladový ceník firmy tím zůstává skrytý i nedotčený.',
+  },
+  {
     klic: 'pole.prirazka', skupina: 'cisla', nazev: 'Pole Globální přirážka',
     kde: 'Kalkulace OCK i PROJ – karta souhrnu',
     popis: 'Procento, o které se zvedá nákup na prodejní cenu. Změna přepočítá celou nabídku.',
@@ -396,7 +406,46 @@ function zobrazeniOciste(mat) {
       out[p.klic][role] = p.pevne ? false : !!r[role];
     });
   });
+  /* volby sekcí kalkulace (19. 8. 2026): projdou jen platné volby platných
+   * oblastí; 'zobrazit' se neukládá, klíč `sekce` vzniká jen když je co nést */
+  if (mat.sekce && typeof mat.sekce === 'object') {
+    const s = {};
+    Object.keys(mat.sekce).forEach(k => {
+      const v = mat.sekce[k];
+      if ((v === 'skryt' || v === 'srolovat') && /^(ock|proj)\.[A-Za-z0-9_.-]+$/.test(k)) s[k] = v;
+    });
+    if (Object.keys(s).length) out.sekce = s;
+  }
   return out;
+}
+
+/* ---------- režimy sekcí kalkulace (zadání 19. 8. 2026 večer) ----------
+ *
+ * Administrátor u KAŽDÉ sekce kalkulace OCK i PROJ volí, jak sekci uvidí
+ * obchodník (a vedoucí):
+ *   zobrazit – normálně (výchozí; do matice se neukládá),
+ *   skryt    – sekce se jim vůbec nekreslí,
+ *   srolovat – sekce je sbalená a jde rozbalit.
+ * Volby žijí v téže matici pod klíčem `sekce` ({ 'ock.rezie': 'skryt', … }),
+ * takže na server cestují stejnou cestou (/api/zobrazeni, očista týmž kódem)
+ * a přežijí obnovení stránky. Administrátor vidí vždy vše — volba je pro něj
+ * jen ovládací prvek. Výpočtu se nic z toho nedotýká: skrytá sekce se dál
+ * počítá, jen není vidět (stejné pravidlo jako sloupec Viditelné u položek). */
+
+const ZOBRAZENI_SEKCE_VOLBY = ['zobrazit', 'skryt', 'srolovat'];
+
+function zobrazeniSekceVolba(mat, klic) {
+  const s = mat && mat.sekce;
+  const v = s && s[klic];
+  return (v === 'skryt' || v === 'srolovat') ? v : 'zobrazit';
+}
+
+function zobrazeniSekceNastav(mat, klic, volba) {
+  if (!mat || typeof mat !== 'object') return mat;
+  if (!mat.sekce || typeof mat.sekce !== 'object') mat.sekce = {};
+  if (volba === 'skryt' || volba === 'srolovat') mat.sekce[klic] = volba;
+  else delete mat.sekce[klic];    // 'zobrazit' (i nesmysl) = výchozí, neukládá se
+  return mat;
 }
 
 /* Liší se matice od dnešního stavu? Používá se v souhrnu Nastavení, aby bylo
@@ -413,4 +462,5 @@ if (typeof module !== 'undefined')
   module.exports = {
     ZOBRAZENI_PRVKY, ZOBRAZENI_SKUPINY, ZOBRAZENI_ROLE_VZDY, ZOBRAZENI_ROLE_PRIDELITELNE,
     zobrazeniVychozi, zobrazeniPrvek, zobrazeniSmi, zobrazeniOciste, zobrazeniZmeny,
+    ZOBRAZENI_SEKCE_VOLBY, zobrazeniSekceVolba, zobrazeniSekceNastav,
   };

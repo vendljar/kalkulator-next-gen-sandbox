@@ -53,7 +53,16 @@
      lišty (zadání) a od zbytku ji odděluje svislá čárka – ať je na první
      pohled vidět, že jde o práci se zakázkou, ne s variantou. */
   .zak-cena-del { width:1px; align-self:stretch; background:#cfe0ff; margin:0 2px; }
-  button.mini.vyzva { background:var(--acc); color:#fff; border-color:var(--acc); font-weight:600; }
+  /* „Uložit zakázku" (17. 8. 2026 večer): dokud zakázka není uložená, svítí
+     tlačítko ČERVENĚ — je to jediná akce, na kterou se nesmí zapomenout.
+     Po uložení se rozsvítí jemně zeleně a zelené je i potvrzení pod lištou. */
+  /* select režimu sekce v nadpisu (zobrazit / skrýt / srolovat, jen admin) */
+  select.sekce-rezim { font-size:11.5px; padding:2px 4px; border:1px solid var(--line);
+      border-radius:5px; background:#fff; color:var(--ink); font-weight:400; }
+  button.mini.vyzva { background:#dc2626; color:#fff; border-color:#b91c1c; font-weight:600; }
+  button.mini.ulozeno-ok { background:#e3f6eb; color:#0a7d4f; border-color:#9adbb7; font-weight:600; }
+  .zak-ulozeni.ulozeno-ok { background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.35);
+     color:#0a7d4f; border-radius:8px; padding:6px 10px; }
   button.mini.vyzva:hover { filter:brightness(1.08); }
   .zak-ulozeni { margin-top:8px; font-size:12px; }
   /* úchop pro přetahování řádků + úzké admin sloupce */
@@ -279,7 +288,7 @@
   #page-kalk [id], #page-proj [id] { scroll-margin-top:64px; }
   /* Lišta detailu je o řádek vyšší (přepínač a tisk stojí nad kotvami),
      proto má cíl kotvy větší odstup než v kalkulacích. */
-  #page-detail [id] { scroll-margin-top:96px; }
+  #page-detail [id], #page-detailproj [id] { scroll-margin-top:96px; }
   html { scroll-behavior:smooth; }
   /* DET-1/DET-3: ovládací lišta detailu výpočtu. Vzhled je záměrně shodný
      s klouzající lištou kalkulací (zadání 29. 7. 2026) – obě dělají totéž
@@ -316,6 +325,7 @@
   .kpi-chk { transform:scale(.9); }
   .pill { display:inline-block; font-size:11px; padding:2px 8px; border-radius:99px; background:#e7efe9; color:var(--ok); font-weight:600; }
   .pill.warn { background:#fdf1e3; color:var(--warn); }
+  .pill.stara { background:#fdecec; color:#b3261e; }   /* hlídka zastaralé verze (19. 8. 2026) */
   .pill.mut { background:#eef1f5; color:var(--mut); }
   .note { color:var(--mut); font-size:12px; margin:6px 0; }
   button { font:inherit; padding:7px 14px; border-radius:7px; border:1px solid var(--line); background:#fff; cursor:pointer; }
@@ -340,8 +350,14 @@
   /* Vyřazená položka (PROJ, #8): zůstává vidět i s hodinami a cenou, jen se
      nepočítá. Proto se ztlumí a přeškrtne — na první pohled je jasné, co u téhle
      stavby neděláme a za kolik, aniž by to mizelo ze seznamu. */
-  tr.vyrazeno td { opacity:.5; text-decoration:line-through; }
-  tr.vyrazeno td input, tr.vyrazeno td button { text-decoration:none; }
+  /* Ztlumení se dělá BARVOU textu, ne přes opacity na celé buňce: opacity
+     rodiče se násobí na všechny potomky a nejde v dítěti „vrátit", takže
+     zesvětlovala i zaškrtávátka admin sloupců Viditelné/Výchozí (zadání
+     19. 8. 2026). Ovládací prvky mají zůstat plně viditelné — viditelnost
+     položky řídí výhradně sloupec Viditelné, nic se nemá probarvovat. */
+  tr.vyrazeno td { color:rgba(26,35,50,.5); text-decoration:line-through; }
+  tr.vyrazeno td input, tr.vyrazeno td button, tr.vyrazeno td select {
+    text-decoration:none; opacity:1; color:var(--ink); }
   /* Interní poznámka k položce — do nabídky ani krycího listu nejde (pravidlo #37),
      tak ať ani v tabulce nekřičí: menší, tlumená, rozbalí se až při psaní. */
   input.pozn-ed { display:block; width:100%; min-width:260px; margin-top:2px; padding:2px 5px;
@@ -621,7 +637,10 @@
   <img src="data:image/svg+xml;base64,__IKONA_B64__" alt="" width="28" height="28"
        style="display:block;border-radius:6px;flex:0 0 auto">
   <h1>Kalkulačka __VERZE__</h1>
-  <span class="ver">OCK dle šablony VZOR v1.00 / v22.7.1 · PROJ dle interního vzoru · <span id="rezimPill" class="pill warn">výpočet: 1:1 jako Excel (vč. jeho chyb)</span></span>
+  <!-- Podtitulek s verzemi šablon zmizel 17. 8. 2026 večer (zadání J. V.) —
+       zůstává jen štítek režimu výpočtu. -->
+  <span class="ver"><span id="rezimPill" class="pill warn">výpočet: 1:1 jako Excel (vč. jeho chyb)</span><span
+    id="verzePill" class="pill stara" style="display:none;margin-left:8px"></span></span>
   <span class="sp"></span>
   <div class="btns">
     <!-- Zpět/Znovu jsou jediná tlačítka hlavičky, která se používají pořád –
@@ -661,6 +680,7 @@
   <button id="tab-specdata" onclick="prepniTab('specdata')">Technická specifikace OCK Data</button>
   <button id="tab-kryci" onclick="prepniTab('kryci')">Krycí list zakázky OCK</button>
   <button id="tab-proj" onclick="prepniTab('proj')">Kalkulace PROJ</button>
+  <button id="tab-detailproj" onclick="prepniTab('detailproj')">Detail výpočtu PROJ</button>
   <button id="tab-kryciproj" onclick="prepniTab('kryciproj')">Krycí list zakázky PROJ</button>
   <button id="tab-cenik" onclick="prepniTab('cenik')">Ceník nákladů OCK</button>
   <button id="tab-cenikproj" onclick="prepniTab('cenikproj')">Ceník nákladů PROJ</button>
@@ -683,6 +703,7 @@
 <div class="page" id="page-specdata" style="display:none"></div>
 <div class="page" id="page-kryci" style="display:none"></div>
 <div class="page" id="page-proj" style="display:none"></div>
+<div class="page" id="page-detailproj" style="display:none"></div>
 <div class="page" id="page-kryciproj" style="display:none"></div>
 <div class="page narrow" id="page-cenik" style="display:none"></div>
 <div class="page narrow" id="page-cenikproj" style="display:none"></div>

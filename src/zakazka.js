@@ -68,6 +68,9 @@ function novaZakazka() {
     // název firmy se píše pokaždé jinak („Stavby s.r.o." / „STAVBY s. r. o.").
     // Odsud ho bere krycí list a odsud si ho vezme i dotažení z ARES (#10).
     ico: '',
+    // DIČ objednatele (19. 8. 2026): potřebují ho smlouvy o dílo
+    // ({{OBJEDNATEL_DIC}}); dotáhne se z ARES spolu s IČO a sídlem.
+    dic: '',
     // KL-2: adresa stavby (`adresa`) a sídlo objednatele jsou dvě různé věci –
     // developer sídlí v Praze a staví v Ostravě. Krycí list potřebuje obě.
     // Prázdné = sídlo se neuvádí; nikdy se sem nedosazuje adresa stavby.
@@ -206,9 +209,12 @@ function hlavickaVyplneno(v) {
 }
 
 function projHlavickaEfektivni(zak) {
+  /* Od 19. 8. 2026 je hlavička JEDNA SPOLEČNÁ (zadání J. V.) — dokumenty PROJ
+   * čtou tatáž pole jako OCK. Stará data v zak.projHlavicka se použijí jen
+   * jako záchrana, když je společné pole prázdné (zakázky z doby dvou sad). */
   const p = projHlavicka(zak), h = {};
   ZAK_HLAVICKA_POLE.forEach(k => {
-    h[k] = hlavickaVyplneno(p[k]) ? p[k] : ((zak && zak[k]) || '');
+    h[k] = hlavickaVyplneno(zak && zak[k]) ? zak[k] : (hlavickaVyplneno(p[k]) ? p[k] : ((zak && zak[k]) || ''));
   });
   return h;
 }
@@ -226,10 +232,51 @@ function projCisloNabidky(zak) {
   return hlavickaVyplneno(p && p.cislo) ? p.cislo : ((zak && zak.cislo) || '');
 }
 
-/* Bere se hodnota pole z hlavičky OCK, protože v PROJ chybí? (jen pro popisek) */
+/* ---------- číslo nabídky s číslem varianty (19. 8. 2026) ----------
+ * Zadání J. V.: „Pokud má kalkulace variantu (např. varianta 2), pak se
+ * v čísle nabídky označí jako tečka a číslo varianty (2026 - OPR - CN -
+ * 555.2)." Platí pro dokumenty OCK i PROJ. První varianta příponu nemá;
+ * pořadí určuje pole zak.varianty (varianta 2 = druhá v seznamu). Prázdné
+ * číslo ani nedopsaná předloha se nedoplňují — přípona na útržku by budila
+ * dojem hotového čísla. `zaklad` dovoluje předat už odvozené číslo
+ * (projCisloNabidky), aniž by se sahalo na zakázku. */
+function cisloSVariantou(zak, varianta, zaklad) {
+  const cislo = String(zaklad != null ? zaklad : ((zak && zak.cislo) || '')).trim();
+  if (!cislo || !hlavickaVyplneno(cislo)) return cislo;
+  const list = (zak && zak.varianty) || [];
+  const i = varianta ? list.findIndex(v => v && v.id === varianta.id) : -1;
+  if (i <= 0) return cislo;
+  return cislo + '.' + (i + 1);
+}
+
+/* ---------- kontrola duplicit čísla a názvu (19. 8. 2026) ----------
+ * Zadání J. V.: „zaveď kontrolu názvů a zejména číslování kalkulací, aby se
+ * neduplikovaly." Porovnává otevřenou zakázku s online rejstříkem: číslo se
+ * srovnává bez mezer a velikosti písmen, název bez diakritiky. Vlastní
+ * soubor se přeskakuje (uložená zakázka není duplikát sebe sama). Vrací
+ * jméno souboru první kolidující zakázky, nebo prázdno. Tvrdou pojistkou
+ * zůstává server: cizí zakázku pod stejným číslem odmítne přepsat (razítko). */
+function zakazkaDuplicita(zak, rejstrik, vlastniSoubor) {
+  const normC = x => String(x == null ? '' : x).replace(/\s+/g, '').toLowerCase();
+  const normN = x => String(x == null ? '' : x).normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').toLowerCase().trim();
+  const out = { cislo: '', nazevAkce: '' };
+  if (!Array.isArray(rejstrik)) return out;
+  const c = hlavickaVyplneno(zak && zak.cislo) ? normC(zak.cislo) : '';
+  const n = String((zak && zak.nazevAkce) || '').trim() ? normN(zak.nazevAkce) : '';
+  for (const r of rejstrik) {
+    if (!r || (vlastniSoubor && r.soubor === vlastniSoubor)) continue;
+    if (c && !out.cislo && normC(r.cislo) === c) out.cislo = r.soubor || 'jiná zakázka';
+    if (n && !out.nazevAkce && normN(r.nazevAkce) === n) out.nazevAkce = r.soubor || 'jiná zakázka';
+  }
+  return out;
+}
+
+/* Do 19. 8. 2026 popisek „z hlavičky OCK". Hlavička je teď jedna společná,
+ * takže popisek nemá o čem informovat — vrací se vždy false (volající místa
+ * v krycím listu PROJ tím zhasnou, nic se nemusí přepisovat). */
 function projHlavickaZOck(zak, klic) {
-  const p = projHlavicka(zak);
-  return !hlavickaVyplneno(p[klic]) && hlavickaVyplneno(zak && zak[klic]);
+  return false;
 }
 
 /* Ruční přenos celé hlavičky. smer: 'doProj' = z OCK do PROJ, 'doOck' = opačně.
@@ -353,6 +400,9 @@ function importZakazka(obj) {
     // dosavadním poli není nic, z čeho by se dalo odvodit, a odhadnuté IČO je
     // horší než žádné (skončilo by ve smlouvě).
     if (obj.ico == null) obj.ico = '';
+    // migrace: DIČ objednatele přibylo 19. 8. 2026 (smlouvy o dílo). Zůstává
+    // PRÁZDNÉ ze stejného důvodu jako IČO – odhadnuté DIČ je horší než žádné.
+    if (obj.dic == null) obj.dic = '';
     // migrace: úvodní fotka nabídky OCK přibyla později
     if (obj.uvodniFoto == null) obj.uvodniFoto = '';
     if (obj.uvodniFotoNazev == null) obj.uvodniFotoNazev = '';
@@ -755,6 +805,7 @@ if (typeof module !== 'undefined')
                      nastavRidici, ridiciVarianta, aktivniVarianta, importZakazka, StorageAdapter,
                      ZAK_HLAVICKA_POLE, zajistiProjHlavicku, projHlavicka,
                      projHlavickaEfektivni, projHlavickaZOck, projCisloNabidky,
+                     cisloSVariantou, zakazkaDuplicita,
                      ZAK_CISLO_PREDLOHA, hlavickaVyplneno,
                      icoNormalizuj, icoVyplneno, icoPlatne,
                      zakazkaKopirujHlavicku, zakazkaHlavickaKolize, zakazkaHlavickyShodne,

@@ -249,10 +249,15 @@ await p.waitForTimeout(500);
 const prehledText = await p.locator('#page-zakazka').innerText();
 ok('přehled obsahuje kartu Cenová nabídka OCK (CN)', /cenová nabídka ock \(cn\)/i.test(prehledText));
 ok('přehled obsahuje kartu Cenová nabídka PROJ (OVP-CN)', /cenová nabídka proj \(ovp-cn\)/i.test(prehledText));
-ok('karta OCK v přehledu má tlačítko generování',
-   await p.locator('#page-zakazka button:has-text("Kompletní náhled a tisk nabídky")').count() >= 2);
-ok('stavový řádek nabídky je v aplikaci 2× (třída, ne id)',
-   await p.locator('.nabidkaStav').count() === 2 && await p.locator('#nabidkaStav').count() === 0);
+/* Dokumentová sekce OCK se 19. 8. 2026 přestěhovala na konec Technické
+ * specifikace — v přehledu tiskne jen PROJ a karta OCK vede tlačítkem
+ * „Technická specifikace" na místo, kde se nabídka OCK nově tvoří. */
+ok('v přehledu tiskne PROJ a karta OCK vede na Technickou specifikaci',
+   await p.locator('#page-zakazka button:has-text("Kompletní náhled a tisk nabídky")').count() >= 1
+   /* 19. 8. 2026 večer: tlačítko přejmenováno na „Přejít na technickou specifikaci" */
+   && await p.locator('#page-zakazka button:has-text("Přejít na technickou specifikaci")').count() >= 1);
+ok('stavový řádek nabídky OCK je nově jen u dokumentové sekce v Technické specifikaci',
+   await p.locator('.nabidkaStav').count() === 1 && await p.locator('#nabidkaStav').count() === 0);
 ok('poznámka vysvětluje, že se nabídky neukládají', prehledText.includes('generují se vždy živě'));
 
 /* --- #34 zámek odeslané nabídky -------------------------------------------
@@ -704,6 +709,10 @@ ok('v náhledu tisku nejsou čísla o marži nikdy', !/\d/.test(m36bezn.tisk.rep
 
 const m36ztrata = await p.evaluate(() => {
   NAST.jeAdmin = true;
+  /* Výchozí ZAMĚŘENÍ je od 18. 8. VYŘAZENÉ (hodiny si nese) — ztráta se
+   * vyrobí až po zapnutí položek. */
+  PJ.sekce[0].polozky.forEach(q => { delete q.vyrazeno; });
+  PJ.sekce[0].polozky[0].hodiny = 5; PJ.sekce[0].polozky[1].hodiny = 10;
   C.marze = 0.30; PJ.sekce[0].prirazkaPct = -60; syncVarianta(); render();
   const lo = document.querySelector('#page-kalk .marze-lista');
   const lp = document.querySelector('#page-proj .marze-lista');
@@ -716,6 +725,7 @@ ok('lišta PROJ jmenuje konkrétní sekci', /ZAMĚŘENÍ/.test(m36ztrata.textPro
 ok('zdravé OCK vedle ztrátové sekce PROJ mlčí', m36ztrata.ock === false);
 
 const m36min = await p.evaluate(() => {
+  PJ.sekce[0].polozky.forEach(q => { q.vyrazeno = true; });               // zpět na výchozí
   PJ.sekce[0].prirazkaPct = 30;            // zpět na zdravou sekci
   C.marze = 0.03;                          // málo, ale pořád se vydělává
   NAST.slevy.minMarze = 0; syncVarianta(); render();
@@ -1142,8 +1152,11 @@ const icoVazby = await p.evaluate(() => {
   return out;
 });
 ok('IČO OCK zapisuje do ZAK.ico', icoVazby.some(s => s.includes("'ZAK.ico'")));
-ok('IČO PROJ zapisuje do ZAK.projHlavicka.ico',
-   icoVazby.some(s => s.includes("'ZAK.projHlavicka.ico'")));
+/* Hlavička je od 19. 8. 2026 jedna společná — i pole na PROJ straně píše
+ * do ZAK.ico; oddělená hlavička PROJ skončila. */
+ok('IČO PROJ zapisuje do společného ZAK.ico (žádná oddělená hlavička)',
+   icoVazby.every(s => !s.includes("'ZAK.projHlavicka.ico'"))
+   && icoVazby.filter(s => s.includes("'ZAK.ico'")).length >= 1, icoVazby.join(' | '));
 
 /* Neplatné IČO má rozsvítit štítek u pole – a nesmí nic zablokovat
  * (KONTROLY_UROVEN = 2, zadání „pouze rozsviť varování"). */
@@ -1233,14 +1246,16 @@ const ares = await p.evaluate(async () => {
   ZAK = novaZakazka(); syncVarianta(); NAST.uzivatel = ''; render();
   return out;
 });
-ok(`tlačítko ARES stojí u obou hlaviček (nalezeno ${ares.tlacitek})`, ares.tlacitek === 2);
+/* V přehledu zůstala jediná (společná) hlavička — jedno tlačítko ARES. */
+ok(`tlačítko ARES stojí u společné hlavičky (nalezeno ${ares.tlacitek})`, ares.tlacitek === 1);
 ok('bez vyplněného IČO je tlačítko zhasnuté', ares.zhaslychBezIco === ares.tlacitek);
 ok('neplatné IČO se do rejstříku vůbec neodešle', ares.volaniPriNeplatnem === 0);
 ok('u neplatného IČO panel mluví o kontrolní číslici',
    /kontrolní číslici/.test(ares.neplatneText), ares.neplatneText);
 ok('nalezená firma je vidět jménem', /Zkušební strojírny/.test(ares.nalezenoText), ares.nalezenoText);
 ok('panel ukáže i sídlo z rejstříku', /Vlárská/.test(ares.nalezenoText), ares.nalezenoText);
-ok(`tabulka staví „teď" proti „z rejstříku" (řádků i s hlavičkou: ${ares.radku})`, ares.radku === 3);
+/* 19. 8. 2026: k názvu a sídlu přibylo DIČ objednatele → 4 řádky s hlavičkou */
+ok(`tabulka staví „teď" proti „z rejstříku" (řádků i s hlavičkou: ${ares.radku})`, ares.radku === 4);
 ok('panel nabídne přepis i odmítnutí', ares.maPotvrzeni && ares.maOdmitnuti);
 ok('do potvrzení se hlavička nezmění',
    ares.pred.objednatel === '' && ares.pred.adresa === '', JSON.stringify(ares.pred));
@@ -1319,7 +1334,7 @@ const zarovnani = await p.evaluate(() => {
              pole: vstupy[0].getBoundingClientRect().right };
   });
 });
-ok(`tlačítko ARES je na obou kartách hlavičky (${zarovnani.length})`, zarovnani.length === 2);
+ok(`tlačítko ARES je na kartě společné hlavičky (${zarovnani.length})`, zarovnani.length === 1);
 zarovnani.forEach((z, i) => ok(
   `tlačítko ARES má pravý okraj v řadě s ostatními buňkami (karta ${i + 1}: `
   + `${z ? Math.round(z.tlacitko) + ' vs ' + Math.round(z.pole) : 'neměřeno'})`,
@@ -1358,7 +1373,9 @@ const zab = await p.evaluate(() => {
 /* Na přehledu zakázky stojí obě nabídky vedle sebe (OCK i PROJ) a každá má
  * zábranu nad svými tlačítky – jeden panel na kartu, tedy dva. Kdyby byl jen
  * jeden, znamenalo by to, že jedna z nabídek zhasla bez vysvětlení. */
-ok(`nad nenahraným ceníkem se ukáže zábrana u obou nabídek (panelů: ${zab.panel})`, zab.panel === 2);
+/* Karta OCK v přehledu už dokumenty negeneruje (jsou v Technické
+ * specifikaci) — zábranu tu nese jen nabídka PROJ. */
+ok(`nad nenahraným ceníkem se ukáže zábrana u nabídky PROJ (panelů: ${zab.panel})`, zab.panel === 1);
 ok('zábrana řekne, že dokument nevznikne', /nevznikne|nedá vytvořit/i.test(zab.panelText), zab.panelText);
 ok('zábrana pošle uživatele pro složku _DB', /_DB/.test(zab.panelText), zab.panelText);
 ok(`tlačítka nabídky zhasla (${zab.zhaslych}/${zab.tlacitek})`,
@@ -1392,15 +1409,19 @@ const listaVen = await p.evaluate(() => {
   Object.assign(ULO_STAV, zaloha); renderUkazkoveLista();
   return { bezSlozky, zapamatovana, pripojena };
 });
-ok(`bez složky lišta nabídne tlačítko pro její připojení („${listaVen.bezSlozky.popis}")`,
-   /_DB/.test(listaVen.bezSlozky.popis) && /uloPripojZnovu/.test(listaVen.bezSlozky.klik));
-ok('bez složky lišta pořád zmiňuje i Nastavení → Úložiště',
-   /Nastavení/.test(listaVen.bezSlozky.text));
-ok(`zapamatovaná složka bez práva nabídne „připojit znovu" („${listaVen.zapamatovana.popis}")`,
-   /znovu/i.test(listaVen.zapamatovana.popis) && /_DB/.test(listaVen.zapamatovana.popis)
-   && /uloPripojZnovu/.test(listaVen.zapamatovana.klik));
-ok('u zapamatované složky lišta říká, že přístup zapomněl prohlížeč',
-   /zapomněl/.test(listaVen.zapamatovana.text), listaVen.zapamatovana.text);
+/* Od 18. 8. 2026 (#150) složka _DB skončila: lišta už NIKDY nenabízí její
+ * připojení a ve všech stavech posílá za online databází (administrátor
+ * zveřejní ceník). Zkoušejí se tytéž tři stavy jako dřív. */
+ok('bez složky lišta nenabízí žádné připojování složky',
+   listaVen.bezSlozky.popis === '' && !/složk/i.test(listaVen.bezSlozky.text),
+   listaVen.bezSlozky.text);
+ok('bez složky lišta posílá za online databází',
+   /online datab/i.test(listaVen.bezSlozky.text) && /administrátor/i.test(listaVen.bezSlozky.text));
+ok('ani zapamatovaná složka nenabízí „připojit znovu"',
+   listaVen.zapamatovana.popis === '' && !/uloPripojZnovu/.test(listaVen.zapamatovana.klik),
+   listaVen.zapamatovana.popis);
+ok('u zapamatované složky platí stejná online věta',
+   /online datab/i.test(listaVen.zapamatovana.text), listaVen.zapamatovana.text);
 /* Připojená složka a přitom svítící lišta není chyba: varianta si nese ceník
  * zmrazený z doby svého vzniku. Tlačítko by tu nepomohlo, jen mátlo. */
 ok('u připojené složky se tlačítko nenabízí', listaVen.pripojena.popis === '');

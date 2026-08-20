@@ -65,10 +65,13 @@ function nabidkaProjKarta() {
     ${typeof kontrolyPanel === 'function' ? kontrolyPanel() : ''}
     ${typeof ukazkoveZabranaPanel === 'function' ? ukazkoveZabranaPanel() : ''}
     <div class="btns" style="margin-top:8px">
+      <!-- Pořadí i barvy od 19. 8. 2026 stejné jako v Kalkulaci OCK (zadání J. V.):
+           modrý (primary) je tisk nabídky, Word je vedlejší cesta bez barvy. -->
       <button class="primary"${typeof ukazkoveZabranaAttr === 'function' ? ukazkoveZabranaAttr() : ''}
-        onclick="nabidkaProjWord()">Vytvořit nabídku PROJ (Word)</button>
-      <button${typeof ukazkoveZabranaAttr === 'function' ? ukazkoveZabranaAttr() : ''}
         onclick="nabidkaProjNahled()">Kompletní náhled a tisk nabídky</button>
+      <button${typeof ukazkoveZabranaAttr === 'function' ? ukazkoveZabranaAttr() : ''}
+        onclick="nabidkaProjWord()">Vytvořit nabídku PROJ (Word)</button>
+      ${typeof tiskJazykVyber === 'function' ? tiskJazykVyber() : ''}
     </div>
     <div class="note nabidkaProjStav" style="margin-top:6px"></div>
     <div class="note">Word se plní <b>šablonou <code>Sablona_NABIDKA_PROJ.docx</code></b> – stejnou cestou jako nabídka OCK.
@@ -78,7 +81,8 @@ function nabidkaProjKarta() {
     <div class="note" style="margin-top:6px">V náhledu lze zaškrtnout <b>✏️ Upravit text před tiskem</b> a nabídku ručně doladit
       (dopsat větu, přeformulovat, škrtnout odstavec) ještě před uložením do PDF. Tlačítko <b>↺ Vrátit původní znění</b>
       vrátí text vygenerovaný z kalkulace. Ruční úpravy platí <b>jen pro daný výtisk</b> – do zakázky ani do kalkulace
-      se nepropisují, takže se čísla v aplikaci nemohou nepozorovaně rozejít.</div>`;
+      se nepropisují, takže se čísla v aplikaci nemohou nepozorovaně rozejít.</div>
+    ${typeof sodProjKarta === 'function' ? sodProjKarta() : ''}`;
 }
 
 /* ============================================================================
@@ -102,7 +106,7 @@ function nabidkaProjStavText(txt) {
 function nabidkaProjWord() {
   /* Stejná cesta jako u nabídky OCK (#139): napřed serverová šablona,
    * místní soubor jen v měkkém režimu nebo bez serveru. */
-  const L = (typeof jazyk === 'function') ? jazyk() : 'cz';
+  const L = (typeof tiskJazyk === 'function') ? tiskJazyk() : jazyk();
   sablonaProTisk('nabidkaProj', L).then(srv => {
     if (srv) { nabidkaProjWordGeneruj(srv); return; }
     // místní cesta – přednost má šablona nahraná v Nastavení → Šablony (SET-6)
@@ -123,7 +127,7 @@ function nabidkaProjWord() {
 }
 
 function nabidkaProjWordGeneruj(srv) {
-  const L = (typeof jazyk === 'function') ? jazyk() : 'cz';
+  const L = (typeof tiskJazyk === 'function') ? tiskJazyk() : jazyk();   // volba „Jazyk tisku" (#143)
   const mutace = (!srv && L !== 'cz' && typeof SABLONY !== 'undefined') ? SABLONY['nabidkaProj_' + L] : null;
   const sablona = srv ? srv.data : (mutace ? mutace.data : SABLONA_PROJ_DOCX.data);
   const mutaceChybi = srv ? srv.mutaceChybi : (L !== 'cz' && !mutace);
@@ -177,7 +181,8 @@ function nabidkaProjNahled() {
     const duvod = dokumentZabrana();
     if (duvod) { alert(duvod); return; }
   }
-  const L = (typeof jazyk === 'function') ? jazyk() : 'cz';
+  const L = (typeof tiskJazyk === 'function') ? tiskJazyk()
+    : ((typeof jazyk === 'function') ? jazyk() : 'cz');   // volba „Jazyk tisku" (#143)
   const P = t => (L !== 'cz' && typeof tr === 'function') ? tr(t, L) : t;
   const akt = (typeof aktivniVarianta === 'function') ? aktivniVarianta(ZAK) : (ZAK.varianty || [])[0];
   const d = nabidkaProjData(ZAK, akt, L);
@@ -191,13 +196,19 @@ function nabidkaProjNahled() {
       return `<h2>${esc(b.nadpis)}</h2>${b.odstavce.map(x =>
         `<p${b.prazdny ? ' class="chybi"' : ''}>${esc(x)}</p>`).join('')}`;
     if (b.typ === 'seznam')
-      return `<h2>${esc(b.nadpis)}</h2><ul>${b.radky.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
+      /* body s pomlčkou místo puntíku (17. 8. večer — jednotný vzhled s rozsahy) */
+      return `<h2>${esc(b.nadpis)}</h2><ul style="list-style:none;margin-left:0;padding-left:2px">${
+        b.radky.map(x => `<li>– ${esc(x)}</li>`).join('')}</ul>`;
     if (b.typ === 'rozsah')
+      /* Od 17. 8. večer: podnadpis části nese popis v závorce a body jdou
+       * s pomlčkou přes celou šířku (řádky s prázdným levým sloupcem). */
       return `<h2>${esc(b.nadpis)}</h2>`
         + (b.uvod || []).map(x => `<p>${esc(x)}</p>`).join('')
-        + `<table>${b.radky.map(r => r[1]
-            ? `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`
-            : `<tr class="podnadpis"><td colspan="2">${esc(r[0])}</td></tr>`).join('')}</table>`;
+        + `<table>${b.radky.map(r => !r[1]
+            ? `<tr class="podnadpis"><td colspan="2">${esc(r[0])}</td></tr>`
+            : (r[0]
+              ? `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`
+              : `<tr><td colspan="2" style="width:auto">${esc(r[1])}</td></tr>`)).join('')}</table>`;
     if (b.typ === 'pary')
       return `<h2>${esc(b.nadpis)}</h2><table>${b.radky.map(r =>
         `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</table>`;
@@ -273,6 +284,7 @@ function nabidkaProjNahled() {
     ${typeof nabidkaFotoHtml === 'function' ? nabidkaFotoHtml('proj') : ''}
     ${html}
     ${rekapHtml}
+    ${typeof dokPodpisHtml === 'function' ? dokPodpisHtml(P) : ''}
     ${patickaHtml}
     </div>
     ${tiskListaSkript({

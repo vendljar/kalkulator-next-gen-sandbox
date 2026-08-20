@@ -118,6 +118,10 @@ test('technická verze uvádí jen ANO/NE bez cen',
 //     a dosud neoceněná činnost se musí přepnout z „není součástí nabídky“ na „ANO – …“
 const puvodni = najdi(bo, 'Hodnota zakázky bez DPH');
 const sekZam = v.data.proj.zadani.sekce.find(s => s.key === 'zamereni');
+/* výchozí zaměření je od 18. 8. VYŘAZENÉ (hodiny si nese dál) — pro zkoušku
+ * živého napojení se položka zapne a na konci zase vyřadí */
+const zamVyrazeno = sekZam.polozky.map(p => !!p.vyrazeno);
+sekZam.polozky.forEach(p => { delete p.vyrazeno; });
 sekZam.polozky[0].hodiny = sekZam.polozky[0].hodiny + 8;
 const bo2 = kp.kryciProjData(zak, v, JEKLY, 'bo');
 test('změna hodin v Kalkulaci PROJ mění hodnotu v krycím listu',
@@ -126,9 +130,14 @@ test('změna hodin v Kalkulaci PROJ mění hodnotu v krycím listu',
 test('hodnota zůstává formátovaná v Kč', /Kč$/.test(najdi(bo2, 'Hodnota zakázky bez DPH') || ''));
 
 const labelStudie = kp.KRYCI_PROJ_CINNOSTI.find(([k]) => k === 'studie')[1];
-test('neoceněná studie je „není součástí nabídky“',
-  najdi(bo2, labelStudie) === 'není součástí nabídky', najdi(bo2, labelStudie));
+/* výchozí rozsah má od 17. 8. 2026 studii VYPLNĚNOU — pro zkoušku neoceněné
+ * činnosti se napřed vynuluje (a hodiny se níž zase vrátí) */
 const sekSt = v.data.proj.zadani.sekce.find(s => s.key === 'studie');
+const puvodniStudie = sekSt.polozky.map(p => p.hodiny);
+sekSt.polozky.forEach(p => { p.hodiny = 0; });
+const boSt0 = kp.kryciProjData(zak, v, JEKLY, 'bo');
+test('neoceněná studie je „není součástí nabídky“',
+  najdi(boSt0, labelStudie) === 'není součástí nabídky', najdi(boSt0, labelStudie));
 sekSt.polozky[0].hodiny = 12;
 const bo3 = kp.kryciProjData(zak, v, JEKLY, 'bo');
 test('po ocenění se studie přepne na ANO s cenou',
@@ -137,7 +146,8 @@ const td3 = kp.kryciProjData(zak, v, JEKLY, 'techdata');
 test('technická verze studie přepnuta na ANO bez ceny',
   najdi(td3, labelStudie) === 'ANO', najdi(td3, labelStudie));
 // vrátit zpět, ať navazující testy pracují s výchozí kalkulací
-sekSt.polozky[0].hodiny = 0; sekZam.polozky[0].hodiny = sekZam.polozky[0].hodiny - 8;
+sekSt.polozky.forEach((p, i) => { p.hodiny = puvodniStudie[i]; }); sekZam.polozky[0].hodiny = sekZam.polozky[0].hodiny - 8;
+sekZam.polozky.forEach((p, i) => { if (zamVyrazeno[i]) p.vyrazeno = true; });
 
 /* ---------- opravy krycího listu (#23), společné s verzí OCK ---------- */
 
@@ -178,8 +188,10 @@ test('doplnění z OCK nezapisuje do hlavičky PROJ',
   !zak2.projHlavicka.nazevAkce && !zak2.projHlavicka.adresa,
   JSON.stringify(zak2.projHlavicka));
 zak2.projHlavicka.nazevAkce = 'Jiný název pro projekci';
-test('vlastní hodnota v hlavičce PROJ má přednost',
-  najdi(kp.kryciProjData(zak2, v2, JEKLY, 'bo'), 'Název akce') === 'Jiný název pro projekci',
+/* Sjednocení hlaviček 19. 8. 2026: společné pole (OCK) má přednost i před
+ * starou hodnotou PROJ — dokument říká totéž co obrazovka. */
+test('společná hlavička má přednost před starou hodnotou PROJ',
+  najdi(kp.kryciProjData(zak2, v2, JEKLY, 'bo'), 'Název akce') === 'Testovací 123',
   najdi(kp.kryciProjData(zak2, v2, JEKLY, 'bo'), 'Název akce'));
 zak2.projHlavicka.nazevAkce = '';
 test('smazáním se vrátí hodnota z hlavičky OCK',
@@ -187,7 +199,7 @@ test('smazáním se vrátí hodnota z hlavičky OCK',
 /* popisek zdroje má říct, odkud hodnota přišla – jinak není poznat, že se
  * v krycím listu čte cizí hlavička */
 const ctxFb = kp.kryciProjCtx(zak2, v2);
-test('popisek zdroje hlásí převzetí z hlavičky OCK', /OCK/.test(ctxFb.hlSrc('nazevAkce')), ctxFb.hlSrc('nazevAkce'));
+test('popisek zdroje je jednotný (společná hlavička)', /společná/.test(ctxFb.hlSrc('nazevAkce')), ctxFb.hlSrc('nazevAkce'));
 zak2.projHlavicka.nazevAkce = 'Vlastní';
 const ctxFb2 = kp.kryciProjCtx(zak2, v2);
 test('popisek zdroje u vlastní hodnoty neuvádí OCK', !/OCK/.test(ctxFb2.hlSrc('nazevAkce')), ctxFb2.hlSrc('nazevAkce'));
@@ -240,8 +252,8 @@ SPOLECNA.forEach(id => {
 });
 
 // KL-4: obchodník z Nastavení → Firma
-test('KL-4 jméno obchodníka z Nastavení → Firma',
-  najdi(bo, 'Jméno obchodníka') === D.zpracoval, najdi(bo, 'Jméno obchodníka'));
+test('KL-4 jméno obchodníka bez přihlášení prázdné (nese ho uživatel, 19. 8.)',
+  !najdi(bo, 'Jméno obchodníka'), najdi(bo, 'Jméno obchodníka'));
 
 // KL-6: scoring je odkaz
 const poleScoringP = kp.KRYCI_PROJ_SEKCE.flatMap(s => s.pole).find(p => p.id === 'scoring');
@@ -250,8 +262,8 @@ test('KL-6 scoring je typu link', poleScoringP && poleScoringP.typ === 'link', p
 // KL-7: patička s podpisem v obou verzích
 test('KL-7 BO obsahuje sekci Podpis', sekBo.includes('Podpis'), sekBo.join('|'));
 test('KL-7 Techdata obsahuje sekci Podpis', sekTd.includes('Podpis'), sekTd.join('|'));
-test('KL-7 podpis obchodníka předvyplněn',
-  najdi(bo, 'Podpis obchodníka') === D.zpracoval, najdi(bo, 'Podpis obchodníka'));
+test('KL-7 podpis obchodníka bez přihlášení prázdný (nese ho uživatel, 19. 8.)',
+  !najdi(bo, 'Podpis obchodníka'), najdi(bo, 'Podpis obchodníka'));
 
 // 7) ruční přepis má přednost a nemíchá se s krycím listem OCK
 v.data.kryci = { hodnoty: { obchodnik: 'Jan Novák' } };

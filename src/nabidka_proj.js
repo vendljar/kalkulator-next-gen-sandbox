@@ -56,35 +56,35 @@ const NABIDKA_PROJ_DEF = [
   { typ: 'nadpis', text: 'ROZSAH NABÍDKY' },
 
   /* ---------------- ZAMĚŘENÍ (ZA) ---------------- */
-  { typ: 'rozsah', nadpis: 'ZAMĚŘENÍ A ZPRACOVÁNÍ VÝSTUPŮ (ZA)', radky: [
-    ['Stavebně technický průzkum a zaměření', 'zajištění původní dokumentace stavby v potřebném rozsahu od investora nebo z archivu stavebního úřadu'],
+  { typ: 'rozsah', nadpis: 'ZAMĚŘENÍ A ZPRACOVÁNÍ VÝSTUPŮ (ZA)', sekce: 'zamereni', radky: [
+    ['Stavebně technický průzkum a zaměření', 'zajištění původní dokumentace stavby v potřebném rozsahu od investora nebo z archivu stavebního úřadu', 'zamereni'],
     ['Stavebně technický průzkum a zaměření', 'detailní zaměření 3D skenerem dotčených částí objektu (ověření reálných rozměrů pro eliminaci chyby původní PD k objektu)'],
-    ['Stavebně technický průzkum a zaměření', 'zpracování výstupu ze zaměření'],
+    ['Stavebně technický průzkum a zaměření', 'zpracování výstupu ze zaměření', 'zamereni'],
     ['Stavebně technický průzkum a zaměření', 'vizuální prohlídka objektu stavebně technických návazností, které mají vliv na úpravu výtahové šachty v objektu'],
-    ['Stavebně technický průzkum a zaměření', 'pořízení detailní fotodokumentace'],
+    ['Stavebně technický průzkum a zaměření', 'pořízení detailní fotodokumentace', 'zamereni'],
   ] },
   { typ: 'cena', nadpis: 'CENA ZA ZAMĚŘENÍ A ZPRACOVÁNÍ VÝSTUPŮ', sekce: 'zamereni',
     popis: 'Cena ZAMĚŘENÍ zamýšleného prostoru pro umístění výtahu, stavebně technický průzkum a zpracování výstupů.' },
 
   /* ---------------- STUDIE PROVEDITELNOSTI (ST) ---------------- */
-  { typ: 'rozsah', nadpis: 'STUDIE PROVEDITELNOSTI (ST)', uvod: [
+  { typ: 'rozsah', nadpis: 'STUDIE PROVEDITELNOSTI (ST)', sekce: ['zamereni', 'studie', 'projednani'], uvod: [
     { cz: 'Studie proveditelnosti – podoba úprav domu, umístění výtahové šachty a technologie výtahu – se zpracovává jako prvotní dokumentace, do které se zapracují veškeré požadavky investora v kombinaci s realizovatelností záměru a legislativních požadavků. Tím se docílí podkladu, který poté slouží nejen pro projednání záměru na stavebním úřadě, ale je možné ho dále rozpracovat do dalších stupňů projektových dokumentací.' },
   ], radky: [
-    ['Studie proveditelnosti – část 1', ''],
-    ['Stavebně technický průzkum a zaměření', 'zajištění původní dokumentace stavby v potřebném rozsahu od investora nebo z archivu stavebního úřadu'],
-    ['Stavebně technický průzkum a zaměření', 'detailní zaměření 3D skenerem dotčených částí objektu'],
-    ['Stavebně technický průzkum a zaměření', 'zpracování výstupu ze zaměření'],
-    ['Stavebně technický průzkum a zaměření', 'vizuální prohlídka objektu stavebně technických návazností'],
-    ['Stavebně technický průzkum a zaměření', 'pořízení detailní fotodokumentace'],
-    ['Studie proveditelnosti – část 2', ''],
-    ['Návrh grafické studie', 'PŮVODNÍ STAV – grafický výstup ze zaměření, průmět reality z průzkumu s původní dokumentací stavby'],
-    ['Návrh grafické studie', 'ROZSAH BOURÁNÍ – grafické naznačení možného rozsahu bourání s ohledem na statiku objektu'],
-    ['Návrh grafické studie', 'NAVRHOVANÝ STAV – návrh na úpravy prostoru pro výtahovou šachtu, portálu dveří a dalších návazných nutných stavebních úprav'],
-    ['Návrh grafické studie', 'TECHNICKÁ ZPRÁVA – obsahující popis řešení'],
-    ['Studie proveditelnosti – část 3', ''],
-    ['Projednání STUDIE PROVEDITELNOSTI', 'díky obsahu a zpracování je možné naši STUDII PROVEDITELNOSTI projednat v této fázi na odboru památkové péče HMP'],
-    ['Projednání STUDIE PROVEDITELNOSTI', 'příprava podkladů pro jednání s odborem památkové péče HMP'],
-    ['Projednání STUDIE PROVEDITELNOSTI', 'zajištění závazného stanoviska od odboru památkové péče HMP k předložené STUDII PROVEDITELNOSTI'],
+    ['Studie proveditelnosti – část 1', '', 'zamereni'],
+    ['Stavebně technický průzkum a zaměření', 'zajištění původní dokumentace stavby v potřebném rozsahu od investora nebo z archivu stavebního úřadu', 'zamereni'],
+    ['Stavebně technický průzkum a zaměření', 'detailní zaměření 3D skenerem dotčených částí objektu', 'zamereni'],
+    ['Stavebně technický průzkum a zaměření', 'zpracování výstupu ze zaměření', 'zamereni'],
+    ['Stavebně technický průzkum a zaměření', 'vizuální prohlídka objektu stavebně technických návazností', 'zamereni'],
+    ['Stavebně technický průzkum a zaměření', 'pořízení detailní fotodokumentace', 'zamereni'],
+    ['Studie proveditelnosti – část 2', '', 'studie'],
+    ['Návrh grafické studie', 'PŮVODNÍ STAV – grafický výstup ze zaměření, průmět reality z průzkumu s původní dokumentací stavby', 'studie'],
+    ['Návrh grafické studie', 'ROZSAH BOURÁNÍ – grafické naznačení možného rozsahu bourání s ohledem na statiku objektu', 'studie'],
+    ['Návrh grafické studie', 'NAVRHOVANÝ STAV – návrh na úpravy prostoru pro výtahovou šachtu, portálu dveří a dalších návazných nutných stavebních úprav', 'studie'],
+    ['Návrh grafické studie', 'TECHNICKÁ ZPRÁVA – obsahující popis řešení', 'studie'],
+    ['Studie proveditelnosti – část 3', '', 'projednani'],
+    ['Projednání STUDIE PROVEDITELNOSTI', 'díky obsahu a zpracování je možné naši STUDII PROVEDITELNOSTI projednat v této fázi na odboru památkové péče HMP', 'projednani'],
+    ['Projednání STUDIE PROVEDITELNOSTI', 'příprava podkladů pro jednání s odborem památkové péče HMP', 'projednani'],
+    ['Projednání STUDIE PROVEDITELNOSTI', 'zajištění závazného stanoviska od odboru památkové péče HMP k předložené STUDII PROVEDITELNOSTI', 'projednani'],
   ] },
   { typ: 'cena', nadpis: 'CENA ZA STUDII PROVEDITELNOSTI – část 1', sekce: 'zamereni',
     popis: 'ZAMĚŘENÍ a zpracování výstupů' },
@@ -92,16 +92,16 @@ const NABIDKA_PROJ_DEF = [
     popis: 'Vypracování STUDIE PROVEDITELNOSTI' },
   { typ: 'cena', nadpis: 'CENA ZA STUDII PROVEDITELNOSTI – část 3', sekce: 'projednani',
     popis: 'Projednání STUDIE PROVEDITELNOSTI na odboru památkové péče HMP' },
-  { typ: 'cena', nadpis: 'STUDIE PROVEDITELNOSTI – variantní řešení', pausal: 'variantaSpKc',
+  { typ: 'cena', nadpis: 'STUDIE PROVEDITELNOSTI – variantní řešení', sekce: 'studie', pausal: 'variantaSpKc',
     jednotka: '1 varianta', popis: 'Vypracování každé jedné další varianty řešení požadované Odborem památkové péče' },
   { typ: 'pozn', radky: [
-    { cz: 'V případě, že se investor rozhodne pro zpracování STUDIE PROVEDITELNOSTI, navazující projekt pro POVOLENÍ ZÁMĚRU se zhotovuje rozšířením této studie do legislativně požadované úrovně. TATO SKUTEČNOST JE ZOHLEDNĚNA V CENĚ NAVAZUJÍCÍHO PROJEKTU.' },
+    { cz: 'V případě, že se investor rozhodne pro zpracování STUDIE PROVEDITELNOSTI, navazující projekt pro POVOLENÍ ZÁMĚRU se zhotovuje rozšířením této studie do legislativně požadované úrovně. TATO SKUTEČNOST JE ZOHLEDNĚNA V CENĚ NAVAZUJÍCÍHO PROJEKTU.', sekce: 'studie' },
     { cz: 'Zhotovitel předá objednateli dílo v počtu 2 paré tištěné dokumentace včetně elektronické podoby v PDF.' },
     { cz: 'Dokumentace bude zaslána v elektronické podobě objednateli na e-mailovou adresu. Objednatel má po předání díla 5 pracovních dní na případnou kontrolu a připomínky. V případě, že v této lhůtě nebudou zaslány žádné připomínky, je dohodnuto, že je dílo převzato bez výhrad.' },
   ] },
 
   /* ---------------- DPZ ---------------- */
-  { typ: 'rozsah', nadpis: 'DOKUMENTACE PRO POVOLENÍ ZÁMĚRU (DPZ)', uvod: [
+  { typ: 'rozsah', nadpis: 'DOKUMENTACE PRO POVOLENÍ ZÁMĚRU (DPZ)', sekce: 'dpz', uvod: [
     { cz: 'Dokumentace pro povolení záměru (DPZ) navazuje na vzájemně odsouhlasenou STUDII PROVEDITELNOSTI. Ta rozpracovává dokumentaci dle platné vyhlášky do legislativou požadované úrovně s autorizacemi inženýrů dle příslušných oborů. Dokumentace pro povolení záměru obsahuje tyto části:' },
   ], radky: [
     ['Dokumentace pro povolení záměru – část 1', ''],
@@ -128,7 +128,7 @@ const NABIDKA_PROJ_DEF = [
     hvezdicka: 'Cena je platná v případě návaznosti na STUDII PROVEDITELNOSTI.' },
 
   /* ---------------- INŽENÝRSKÁ ČINNOST ---------------- */
-  { typ: 'seznam', nadpis: 'INŽENÝRSKÁ ČINNOST (IČ)', radky: [
+  { typ: 'seznam', nadpis: 'INŽENÝRSKÁ ČINNOST (IČ)', sekce: 'ic', radky: [
     'Kompletace podkladů pro vyjádření dotčených orgánů včetně plných mocí',
     'Podání a projednání na dotčených orgánech a zajištění stanovisek dotčených orgánů požadovaných STAVEBNÍM ÚŘADEM (Hasičský záchranný sbor, Hygienická stanice, Odbor životního prostředí, Národní památkový ústav, Odbor památkové péče a případné další)',
     'Zkompletování podkladů potřebných pro POVOLENÍ ZÁMĚRU, podání žádosti',
@@ -138,7 +138,7 @@ const NABIDKA_PROJ_DEF = [
   { typ: 'cena', nadpis: 'CENA ZA INŽENÝRSKOU ČINNOST (IČ)', sekce: 'ic', popis: 'Vyřízení POVOLENÍ ZÁMĚRU' },
 
   /* ---------------- DPS ---------------- */
-  { typ: 'rozsah', nadpis: 'DOKUMENTACE PRO PROVEDENÍ STAVBY (DPS)', uvod: [
+  { typ: 'rozsah', nadpis: 'DOKUMENTACE PRO PROVEDENÍ STAVBY (DPS)', sekce: 'dps', uvod: [
     { cz: 'Detailní prováděcí projekt, jehož zpracování doporučujeme, jasně určí rozsah, způsob provádění, detaily konstrukčních řešení a položky stavebních prací. Eliminuje vznik víceprací, nevhodný způsob provádění a zbytečné protažení realizace. Prováděcí projekt obsahuje tyto části:' },
   ], radky: [
     ['Dokumentace pro provedení stavby – část 1', ''],
@@ -157,7 +157,7 @@ const NABIDKA_PROJ_DEF = [
     popis: 'Zpracování podle částí 1–3' },
 
   /* ---------------- EZC ---------------- */
-  { typ: 'seznam', nadpis: 'EKONOMICKÁ ZADÁVACÍ ČÁST (EZC)', radky: [
+  { typ: 'seznam', nadpis: 'EKONOMICKÁ ZADÁVACÍ ČÁST (EZC)', sekce: 'ezc', radky: [
     'ROZPOČET (oceněný výkaz výměr) jednotlivých profesí a všech stavebních prací',
     'VÝKAZ VÝMĚR (neoceněný výkaz výměr) pro nacenění prací od zhotovitele',
     'obsahuje kontrolu rozpočtu hlavním inženýrem projektu',
@@ -166,7 +166,7 @@ const NABIDKA_PROJ_DEF = [
     popis: 'Ekonomická zadávací část (rozpočet a výkaz výměr)' },
 
   /* ---------------- KOLAUDACE ---------------- */
-  { typ: 'seznam', nadpis: 'ZAJIŠTĚNÍ KOLAUDAČNÍHO ŘÍZENÍ', radky: [
+  { typ: 'seznam', nadpis: 'ZAJIŠTĚNÍ KOLAUDAČNÍHO ŘÍZENÍ', sekce: 'kolaudace', radky: [
     'Zajištění termínu kolaudace se stavebním úřadem a s dotčenými orgány',
     'Kontrola kompletnosti dokladů ze strany zhotovitelů',
     'Vedení kolaudace bez nutnosti účasti stavebníka',
@@ -175,7 +175,7 @@ const NABIDKA_PROJ_DEF = [
     hvezdicka: 'Cena KOLAUDACE platí v případě uskutečnění KOLAUDACE do 2 let od nabytí právní moci povolení záměru.' },
 
   /* ---------------- GEODET ---------------- */
-  { typ: 'seznam', nadpis: 'GEODETICKÉ ZAMĚŘENÍ', radky: [
+  { typ: 'seznam', nadpis: 'GEODETICKÉ ZAMĚŘENÍ', sekce: 'geodet', radky: [
     'Provedení zaměření geodetem',
     'Zpracování geometrického plánu',
   ] },
@@ -202,32 +202,32 @@ const NABIDKA_PROJ_DEF = [
   ] },
   { typ: 'pary', nadpis: 'DPH, SPLATNOST FAKTUR A PLATNOST NABÍDKY', klic: 'obchodni', radky: [] },
 
-  { typ: 'pary', nadpis: 'PLATEBNÍ PODMÍNKY ZAMĚŘENÍ', radky: [
+  { typ: 'pary', nadpis: 'PLATEBNÍ PODMÍNKY ZAMĚŘENÍ', sekce: 'zamereni', radky: [
     ['Platba po podpisu objednávky zaměření', '50 % z celkové ceny za zaměření'],
     ['Platba po ZHOTOVENÍ VÝSTUPŮ ze ZAMĚŘENÍ', '50 % z celkové ceny za zaměření'],
   ] },
-  { typ: 'pary', nadpis: 'PLATEBNÍ PODMÍNKY STUDIE PROVEDITELNOSTI (SP)', radky: [
+  { typ: 'pary', nadpis: 'PLATEBNÍ PODMÍNKY STUDIE PROVEDITELNOSTI (SP)', sekce: 'studie', radky: [
     ['Platba po podpisu objednávky studie proveditelnosti', '50 % z celkové ceny za studii'],
     ['Platba po předání studie proveditelnosti', '40 % z celkové ceny za studii'],
     ['Platba po předání vyjádření odboru památkové péče HMP', '10 % z celkové ceny za studii'],
   ] },
-  { typ: 'pary', nadpis: 'PLATEBNÍ PODMÍNKY DPZ', radky: [
+  { typ: 'pary', nadpis: 'PLATEBNÍ PODMÍNKY DPZ', sekce: 'dpz', radky: [
     ['Platba po podpisu objednávky', '50 % z nabídkové ceny za DPZ'],
     ['Platba po dokončení dokumentace pro povolení záměru v rozsahu pro podání na dotčené orgány', '30 % z nabídkové ceny za DPZ'],
     ['Platba po dokončení dokumentace pro povolení záměru v rozsahu pro podání na stavební úřad', '20 % z nabídkové ceny za DPZ'],
   ] },
-  { typ: 'pary', nadpis: 'PLATEBNÍ PODMÍNKY INŽENÝRSKÉ ČINNOSTI (IČ)', radky: [
+  { typ: 'pary', nadpis: 'PLATEBNÍ PODMÍNKY INŽENÝRSKÉ ČINNOSTI (IČ)', sekce: 'ic', radky: [
     ['Platba po podpisu objednávky', '50 % z nabídkové ceny za IČ'],
     ['Platba po získání stanovisek dotčených orgánů a po podání dokumentace na stavební úřad a zahájení řízení', '30 % z nabídkové ceny za IČ'],
     ['Platba po vydání povolení záměru', '20 % z nabídkové ceny za IČ'],
   ] },
-  { typ: 'pary', nadpis: 'PLATEBNÍ PODMÍNKY DPS A EZC', radky: [
+  { typ: 'pary', nadpis: 'PLATEBNÍ PODMÍNKY DPS A EZC', sekce: ['dps', 'ezc'], radky: [
     ['Platba po podpisu objednávky dokumentace pro provedení stavby (DPS)', '50 % z nabídkové ceny za tuto činnost'],
     ['Platba po předání kompletní dokumentace pro provedení stavby (DPS)', '50 % z nabídkové ceny za tuto činnost'],
     ['Platba po podpisu objednávky ekonomické zadávací části (EZC)', '50 % z nabídkové ceny za tuto činnost'],
     ['Platba po předání ekonomické zadávací části (EZC)', '50 % z nabídkové ceny za tuto činnost'],
   ] },
-  { typ: 'pary', nadpis: 'PLATEBNÍ PODMÍNKY PRO ZAJIŠTĚNÍ KOLAUDAČNÍHO ŘÍZENÍ', radky: [
+  { typ: 'pary', nadpis: 'PLATEBNÍ PODMÍNKY PRO ZAJIŠTĚNÍ KOLAUDAČNÍHO ŘÍZENÍ', sekce: 'kolaudace', radky: [
     ['Platba před zahájením kolaudačního řízení', '50 % z celkové ceny za tuto činnost'],
     ['Platba po vydání kolaudačního rozhodnutí', '50 % z celkové ceny za tuto činnost'],
   ] },
@@ -236,16 +236,16 @@ const NABIDKA_PROJ_DEF = [
   ] },
 
   { typ: 'pary', nadpis: 'TERMÍNY', radky: [
-    ['Provedení detailního zaměření a stavebně technického průzkumu', 'ZAMĚŘENÍ na stavbě do 4 týdnů od objednání a předání plné moci; zpracování VÝSTUPŮ do 4–6 týdnů od zaměření'],
-    ['Zpracování STUDIE PROVEDITELNOSTI (SP)', 'do 10–12 týdnů od zpracování výstupů ze zaměření'],
-    ['Projednání s odborem památkové péče HMP', 'do cca 2–3 měsíců od podání žádosti – záleží na vytíženosti úředníků státní správy'],
-    ['Zpracování dokumentace pro dotčené orgány (hrubopis DPZ)', 'do 10–12 týdnů od schválení studie investorem a objednání'],
-    ['Zajištění stanovisek dotčených orgánů', 'cca do 4 týdnů od podání žádosti (v případě potřeby stanoviska hygieny a/nebo památkové péče cca do 2,5 měsíce)'],
-    ['Dopracování dokumentace pro povolení záměru (čistopis DPZ)', 'proběhne v průběhu lhůty vyjádření dotčených orgánů'],
-    ['Podání žádosti o povolení záměru', 'po obdržení souhlasných stanovisek dotčených orgánů (+ 14 dní v případě nutnosti zapracování podmínek dotčených orgánů do dokumentace)'],
-    ['Inženýrská činnost (IČ) – vyřízení povolení záměru', 'cca 2 měsíce od podání žádosti + 1 měsíc na nabytí právní moci povolení záměru'],
-    ['Zpracování dokumentace pro provedení stavby (DPS)', 'cca do 6 týdnů od schválení dokumentace a povolení záměru stavebním úřadem'],
-    ['Ekonomická zadávací část (EZC)', 'do 2 týdnů od zpracování projektu pro provedení stavby'],
+    ['Provedení detailního zaměření a stavebně technického průzkumu', 'ZAMĚŘENÍ na stavbě do 4 týdnů od objednání a předání plné moci; zpracování VÝSTUPŮ do 4–6 týdnů od zaměření', 'zamereni'],
+    ['Zpracování STUDIE PROVEDITELNOSTI (SP)', 'do 10–12 týdnů od zpracování výstupů ze zaměření', 'studie'],
+    ['Projednání s odborem památkové péče HMP', 'do cca 2–3 měsíců od podání žádosti – záleží na vytíženosti úředníků státní správy', 'projednani'],
+    ['Zpracování dokumentace pro dotčené orgány (hrubopis DPZ)', 'do 10–12 týdnů od schválení studie investorem a objednání', 'dpz'],
+    ['Zajištění stanovisek dotčených orgánů *)', 'cca do 4 týdnů od podání žádosti (v případě potřeby stanoviska hygieny a/nebo památkové péče cca do 2,5 měsíce)', 'ic'],
+    ['Dopracování dokumentace pro povolení záměru (čistopis DPZ)', 'proběhne v průběhu lhůty vyjádření dotčených orgánů', 'dpz'],
+    ['Podání žádosti o povolení záměru', 'po obdržení souhlasných stanovisek dotčených orgánů (+ 14 dní v případě nutnosti zapracování podmínek dotčených orgánů do dokumentace)', 'ic'],
+    ['Inženýrská činnost (IČ) – vyřízení povolení záměru *)', 'cca 2 měsíce od podání žádosti + 1 měsíc na nabytí právní moci povolení záměru', 'ic'],
+    ['Zpracování dokumentace pro provedení stavby (DPS)', 'cca do 6 týdnů od schválení dokumentace a povolení záměru stavebním úřadem', 'dps'],
+    ['Ekonomická zadávací část (EZC)', 'do 2 týdnů od zpracování projektu pro provedení stavby', 'ezc'],
   ] },
   { typ: 'pozn', radky: [
     { cz: '*) Termíny pro vyjádření dotčených orgánů a stavebního úřadu nejsou závazné. Jedná se o termíny, které nemůže zhotovitel z velké části ovlivnit.' },
@@ -269,9 +269,16 @@ function nabidkaProjData(zak, varianta, lang) {
   const pj = d.proj || {};
   const r = vypocetProj(pj.zadani || DEFAULT_ZADANI_PROJ, pj.cenik || DEFAULT_CENIK_PROJ);
 
-  /* #14 krok 3: formát bydlí ve format.js (záložka pro samostatný Node běh) */
-  const kc = (typeof formatKc2 === 'function') ? formatKc2
-    : n => (+n || 0).toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Kč';
+  /* #14 krok 3: formát bydlí ve format.js (záložka pro samostatný Node běh).
+   * Měna (#155 + dorovnání 19. 8. večer): CZ = koruny; jiná mutace = eura
+   * kurzem z ceníku varianty. Převádějí se ČÍSLA po sekcích (celá eura
+   * nahoru, mena.na) a součty se sčítají z převedených sekcí — rozpad sedí
+   * na euro. Kurz se v dokumentu neukazuje; bez kurzu chyba. */
+  const mena = (typeof menaDokumentu === 'function') ? menaDokumentu(L, (pj.cenik || {}).kurzEurKc)
+    : { eur: false, na: n => n,
+        fmt: (typeof formatKc2 === 'function') ? formatKc2
+          : n => (+n || 0).toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Kč' };
+  const kc = mena.fmt;
   const datumCz = iso => {
     if (!iso) return '';
     const [y, m, dd] = String(iso).split('-');
@@ -304,6 +311,10 @@ function nabidkaProjData(zak, varianta, lang) {
   r.sekce.forEach(s => {
     cenyPred[s.key] = zaokr(s.celkem);                 // cena sekce před slevou
     cenyPo[s.key] = zaokr(s.celkem * (1 - pSleva));    // a po ní
+    if (mena.eur) {                                    // eura po SEKCÍCH — součty se pak sčítají
+      cenyPred[s.key] = mena.na(cenyPred[s.key]);
+      cenyPo[s.key] = mena.na(cenyPo[s.key]);
+    }
   });
   const cenaSekce = key => (cenyPo[key] == null ? null : cenyPo[key]);
 
@@ -322,9 +333,12 @@ function nabidkaProjData(zak, varianta, lang) {
    * celkem" na korunu; jinak by v nabídce zbyl haléřový rozdíl, který nemá
    * kam patřit. */
   const slevaKcNum = Math.round((soucetSekci - celkemBezDph) * 100) / 100;
-  /* #14 krok 1: DPH jedinou funkcí (záložka pro Node test bez zaokrouhleni.js) */
-  const dphKc = (typeof cenaSDph === 'function')
-    ? cenaSDph(celkemBezDph, dphPct / 100).dphKc : celkemBezDph * dphPct / 100;
+  /* #14 krok 1: DPH jedinou funkcí. V eurech se DPH počítá z PŘEVEDENÉHO
+   * základu a zaokrouhluje nahoru — celkem s DPH je pak přesný součet. */
+  const dphKc = mena.eur
+    ? Math.ceil(celkemBezDph * dphPct / 100)
+    : (typeof cenaSDph === 'function')
+      ? cenaSDph(celkemBezDph, dphPct / 100).dphKc : celkemBezDph * dphPct / 100;
 
   /* Částka jedné činnosti pro šablonu. Prázdná (neoceněná) činnost se v
    * dokumentu pojmenuje slovy, ne nulou — viz komentář u symbolů níž. */
@@ -335,9 +349,25 @@ function nabidkaProjData(zak, varianta, lang) {
 
   /* --- rozbalení definice do bloků připravených k vykreslení --- */
   const proza = o => (o && typeof o === 'object' && o.cz !== undefined) ? o.cz : P(o);
-  const bloky = NABIDKA_PROJ_DEF.map(b => {
+
+  /* SEKCE MIMO KALKULAČNÍ ROZSAH SE V NABÍDCE NEUVÁDĚJÍ VŮBEC (rozhodnutí
+   * J. V. 17. 8. 2026) — ani popis, ani cena, ani platební podmínky či
+   * termíny. Do 17. 8. platilo „neoceněná činnost = ‚není součástí této
+   * nabídky'"; ta věta zůstává jen ve Wordu (pevná šablona neumí vypustit
+   * své odstavce), tiskový náhled sekci vynechá celou. Bloky a řádky nesou
+   * příslušnost k sekci (b.sekce, 3. prvek řádku) — co ji nemá, je obecné
+   * a zůstává vždy. */
+  const vRozsahu = k => !!cenaSekce(k);
+  const blokVRozsahu = b => {
+    if (!b.sekce) return true;
+    return (Array.isArray(b.sekce) ? b.sekce : [b.sekce]).some(vRozsahu);
+  };
+  const radekVRozsahu = x => !Array.isArray(x) || x.length < 3 || vRozsahu(x[2]);
+
+  const bloky = NABIDKA_PROJ_DEF.filter(blokVRozsahu).map(b => {
     if (b.typ === 'nadpis') return { typ: 'nadpis', text: P(b.text) };
-    if (b.typ === 'pozn') return { typ: 'pozn', radky: b.radky.map(proza) };
+    if (b.typ === 'pozn') return { typ: 'pozn',
+      radky: b.radky.filter(x => !x.sekce || vRozsahu(x.sekce)).map(proza) };
     if (b.typ === 'proza') {
       const odst = b.odstavce.map(proza);
       if (b.klic === 'popisZameru') {
@@ -348,27 +378,60 @@ function nabidkaProjData(zak, varianta, lang) {
       return { typ: 'proza', nadpis: P(b.nadpis), odstavce: odst, prazdny: b.klic === 'popisZameru' && !(zak && zak.popisZameru || '').trim() };
     }
     if (b.typ === 'seznam') return { typ: 'seznam', nadpis: P(b.nadpis), radky: b.radky.map(P) };
-    if (b.typ === 'rozsah') return { typ: 'rozsah', nadpis: P(b.nadpis),
-      uvod: (b.uvod || []).map(proza),
-      radky: b.radky.map(x => [P(x[0]), x[1] ? P(x[1]) : '']) };
+    if (b.typ === 'rozsah') {
+      /* PŘESKLÁDÁNÍ ROZSAHU (17. 8. 2026 večer, zadání J. V.): podnadpis
+       * části nese v závorce POPIS (společný levý štítek řádků pod ním) —
+       * „Dokumentace pro povolení záměru – část 1 (Stavební část projektu)" —
+       * a každý bod začíná pomlčkou přes celou šířku. Opakovat tentýž štítek
+       * na každém řádku bylo hůř čitelné. Skupiny bez hlavičky části (blok
+       * ZAMĚŘENÍ) dostanou podnadpis ze svého štítku. */
+      const vstup = b.radky.filter(radekVRozsahu).map(x => [P(x[0]), x[1] ? P(x[1]) : '']);
+      const radky = [];
+      let i = 0;
+      const jeHlavicka = r => !r[1];
+      while (i < vstup.length) {
+        if (jeHlavicka(vstup[i])) {
+          const cast = vstup[i][0]; i++;
+          const skupina = [];
+          while (i < vstup.length && !jeHlavicka(vstup[i])) { skupina.push(vstup[i]); i++; }
+          const stitky = [...new Set(skupina.map(r => r[0]).filter(Boolean))];
+          radky.push([cast + (stitky.length === 1 ? ' (' + stitky[0] + ')' : ''), '']);
+          skupina.forEach(r => radky.push(['', '– ' + r[1]]));
+        } else {
+          const stitek = vstup[i][0];
+          const skupina = [];
+          while (i < vstup.length && !jeHlavicka(vstup[i]) && vstup[i][0] === stitek) { skupina.push(vstup[i]); i++; }
+          if (stitek) radky.push([stitek, '']);
+          skupina.forEach(r => radky.push(['', '– ' + r[1]]));
+        }
+      }
+      return { typ: 'rozsah', nadpis: P(b.nadpis), uvod: (b.uvod || []).map(proza), radky };
+    }
     if (b.typ === 'pary') {
       if (b.klic === 'obchodni') return { typ: 'pary', nadpis: P(b.nadpis), radky: [
         [P('Současně platná sazba DPH'), dphPct + ' %'],
         [P('Splatnost faktur'), NABIDKA_PROJ_SAZBY.splatnostDni + ' ' + P('dní')],
         [P('Platnost nabídky'), NABIDKA_PROJ_SAZBY.platnostMesicu + ' ' + P('měsíce')],
       ] };
-      return { typ: 'pary', nadpis: P(b.nadpis), radky: b.radky.map(x => [P(x[0]), P(x[1])]) };
+      return { typ: 'pary', nadpis: P(b.nadpis),
+        radky: b.radky.filter(radekVRozsahu).map(x => [P(x[0]), P(x[1])]) };
     }
     /* typ === 'cena' */
     const pausal = b.pausal ? NABIDKA_PROJ_SAZBY[b.pausal] : null;
-    const hodnota = pausal != null ? pausal : cenaSekce(b.sekce);
+    const hodnota = pausal != null ? mena.na(pausal) : cenaSekce(b.sekce);
     const neuvedena = pausal == null && !hodnota;
     return { typ: 'cena', nadpis: P(b.nadpis), popis: P(b.popis), sekce: b.sekce || null,
       castka: neuvedena ? P('není součástí této nabídky') : kc(hodnota)
         + (b.jednotka ? ' / ' + P(b.jednotka) : ''),
       neuvedena: neuvedena,
       hvezdicka: b.hvezdicka ? P(b.hvezdicka) : '' };
-  });
+  })
+    /* neoceněný cenový blok se od 17. 8. 2026 vynechává (dřív nesl větu
+     * „není součástí této nabídky") a s ním i bloky/řádky jeho sekce výše;
+     * prázdné zbytky (rozsah bez řádků) se neukazují také */
+    .filter(b => !(b.typ === 'cena' && b.neuvedena))
+    .filter(b => !((b.typ === 'rozsah' || b.typ === 'seznam' || b.typ === 'pary' || b.typ === 'pozn')
+      && b.radky && b.radky.length === 0));
 
   const rekapitulace = NABIDKA_PROJ_SEKCE
     .filter(k => cenaSekce(k))
@@ -387,6 +450,8 @@ function nabidkaProjData(zak, varianta, lang) {
    * ze dvou dokumentů jiné číslo. Kopie objektu, ať se do dat nic nezapíše. */
   const h = Object.assign({}, hZaklad);
   if (typeof projCisloNabidky === 'function') h.cislo = projCisloNabidky(zak);
+  /* Číslo varianty ≥ 2 tečkou (…-555.2) — zadání 19. 8. 2026, OCK i PROJ. */
+  if (typeof cisloSVariantou === 'function') h.cislo = cisloSVariantou(zak, varianta, h.cislo);
   const placeholders = {
     OBJEDNATEL: h.objednatel || '…',
     OBJEDNATEL_KONTAKT: h.kontakt || '…',
@@ -418,8 +483,8 @@ function nabidkaProjData(zak, varianta, lang) {
     PROJ_CENA_KOLAUDACE: cenaSymbol('kolaudace'),
     PROJ_CENA_GEODET: cenaSymbol('geodet'),
     /* Paušály z ceníku nabídky — ve vzoru byly napsané natvrdo v textu. */
-    PROJ_CENA_VARIANTA: kc(NABIDKA_PROJ_SAZBY.variantaSpKc),
-    PROJ_CENA_AD: kc(NABIDKA_PROJ_SAZBY.autorskyDozorKcMesic),
+    PROJ_CENA_VARIANTA: kc(mena.na(NABIDKA_PROJ_SAZBY.variantaSpKc)),
+    PROJ_CENA_AD: kc(mena.na(NABIDKA_PROJ_SAZBY.autorskyDozorKcMesic)),
     PROJ_CELKEM_BEZ_DPH: kc(celkemBezDph),
     /* Rozpad slevy projekce. Prázdné, dokud žádná schválená sleva není —
      * nula v dokumentu vypadá jako „slevu jsme dali a byla nulová". */

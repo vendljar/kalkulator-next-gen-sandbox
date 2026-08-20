@@ -34,8 +34,15 @@ const NAST_PANELY = [
   { id: 'zobrazeni', nazev: 'Zobrazení', klic: 'nastaveni.zobrazeni', telo: () => nastZobrazeni() },
   { id: 'konfigurace', nazev: 'Konfigurace', klic: 'nastaveni.konfigurace', telo: () => nastKonfigurace() },
   { id: 'slovnik', nazev: 'Slovník', klic: 'nastaveni.slovnik', telo: () => nastSlovnik() },
+  /* Analytika (#25+#26+#27) je JEN pro administrátora — natvrdo, ne přes
+   * matici zobrazení: časy zakázek a čísla provozu se nepřidělují (rozhodnutí
+   * 17. 8. 2026), takže by řádek v matici jen sváděl k omylu. */
+  { id: 'analytika', nazev: 'Analytika', jenAdmin: true, telo: () => nastAnalytika() },
 ];
-function nastPanelSmi(x) { return !x.klic || typeof smiZobrazit !== 'function' || smiZobrazit(x.klic); }
+function nastPanelSmi(x) {
+  if (x.jenAdmin && !(typeof jeAdmin === 'function' && jeAdmin())) return false;
+  return !x.klic || typeof smiZobrazit !== 'function' || smiZobrazit(x.klic);
+}
 function nastPanelyViditelne() { return NAST_PANELY.filter(nastPanelSmi); }
 /* Vybraný panel se dohledává přes „smí ho vidět" — kdyby v NAST.panel zůstal
  * z dřívějška panel, na který uživatel po změně matice nárok nemá (nebo se
@@ -118,7 +125,8 @@ function slSchemaSet(i, k, v) { NAST.slevy.schemata[i][k] = v; nastRefresh(); }
 const NAST_TAB_LABELS = {
   detail: 'Detail výpočtu', spec: 'Technická specifikace OCK', specdata: 'Technická specifikace OCK Data',
   kryci: 'Krycí list zakázky OCK',
-  proj: 'Kalkulace PROJ', kryciproj: 'Krycí list zakázky PROJ', cenik: 'Ceník nákladů OCK', cenikproj: 'Ceník nákladů PROJ', zakazka: 'Přehled cenových nabídek',
+  proj: 'Kalkulace PROJ', detailproj: 'Detail výpočtu PROJ', kryciproj: 'Krycí list zakázky PROJ',
+  cenik: 'Ceník nákladů OCK', cenikproj: 'Ceník nákladů PROJ', zakazka: 'Přehled cenových nabídek',
   schvalovani: 'Schvalování slev',
 };
 
@@ -153,7 +161,7 @@ function nastObecne() {
     'Ceník nákladů OCK a Ceník nákladů PROJ (celé záložky)',
     'Editace jednotkových cen přímo v kalkulaci (obousměrně s ceníkem)',
     'Globální přirážka a sloupce <b>Náklad</b> / <b>Přirážka</b>',
-    'Režim výpočtu (opravený / 1:1 jako Excel)',
+    'Režim výpočtu (Model 2 – opravený / Model 1 – 1:1 jako Excel)',
     'Rezervy a záložka <b>Detail výpočtu</b>',
     'Záložka <b>Technická specifikace OCK Data</b> (editace číselníků a výchozích hodnot)',
     '<b>Import / Export dat</b> – ceník do/z Excelu, export dat specifikace (jen administrátor)',

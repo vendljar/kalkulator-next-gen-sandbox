@@ -77,7 +77,12 @@ test('platební podmínky jsou u všech sedmi činností',
   NABIDKA_PROJ_DEF.filter(b => b.typ === 'pary' && /PLATEBNÍ PODMÍNKY/.test(b.nadpis || '')).length);
 
 /* --- 2) výstup: bloky --- */
-test('vrací stejný počet bloků jako definice', d.bloky.length === NABIDKA_PROJ_DEF.length,
+/* Od 17. 8. 2026 (rozhodnutí J. V.) se sekce mimo kalkulační rozsah v nabídce
+ * NEUVÁDĚJÍ VŮBEC — bloků proto může být méně než v definici, nikdy víc,
+ * a žádný vypsaný cenový blok nesmí být neuvedený. */
+test('bloky nesou jen sekce v rozsahu (mimo rozsah se vynechávají)',
+  d.bloky.length <= NABIDKA_PROJ_DEF.length
+  && d.bloky.filter(b => b.typ === 'cena' && b.sekce).every(b => !b.neuvedena),
   d.bloky.length + '/' + NABIDKA_PROJ_DEF.length);
 test('žádný blok nemá prázdný nadpis',
   d.bloky.every(b => b.typ === 'pozn' || (b.nadpis || b.text)));
@@ -88,11 +93,15 @@ test('rozsahové bloky mají řádky', d.bloky.filter(b => b.typ === 'rozsah').e
 
 /* --- 3) ceny sedí na vypocetProj, nic se nedopočítává --- */
 const kc = n => n.toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Kč';
-const cenaZa = r.sekce.find(s => s.key === 'zamereni').celkem;
-const blokZa = d.bloky.find(b => b.typ === 'cena' && b.sekce === 'zamereni');
-test('cena ZAMĚŘENÍ je přesně z Kalkulace PROJ', blokZa.castka === kc(cenaZa), blokZa.castka + ' vs ' + kc(cenaZa));
-test('část 1 studie a ZAMĚŘENÍ mají tutéž cenu (tatáž činnost)',
-  d.bloky.filter(b => b.typ === 'cena' && b.sekce === 'zamereni').every(b => b.castka === kc(cenaZa)));
+/* Výchozí rozsah je od 17. 8. 2026 večer STUDIE (zaměření prázdné a tedy
+ * mimo dokument) — cena proti kalkulaci se proto kontroluje na studii. */
+const cenaSt = r.sekce.find(s => s.key === 'studie').celkem;
+const blokSt = d.bloky.find(b => b.typ === 'cena' && b.sekce === 'studie' && !b.pausalni && !/variantní/.test(b.nadpis));
+test('výchozí rozsah: STUDIE vyplněná, ZAMĚŘENÍ prázdné (mimo dokument)',
+  cenaSt > 0 && !d.bloky.some(b => b.typ === 'cena' && b.sekce === 'zamereni'),
+  d.bloky.filter(b => b.typ === 'cena').map(b => b.nadpis).join(' | '));
+test('cena STUDIE je přesně z Kalkulace PROJ', !!blokSt && blokSt.castka === kc(cenaSt),
+  (blokSt || {}).castka + ' vs ' + kc(cenaSt));
 const soucet = NABIDKA_PROJ_SEKCE.reduce((a, k) => {
   const s = r.sekce.find(x => x.key === k); return a + (s ? s.celkem : 0);
 }, 0);
@@ -114,9 +123,18 @@ vN.data.proj.zadani.sekce.forEach(s => {
 Object.keys(vN.data.proj.cenik.fixy).forEach(k => { vN.data.proj.cenik.fixy[k] = 0; });
 const dN = nabidkaProjData(zakN, vN);
 const cenove = dN.bloky.filter(b => b.typ === 'cena' && b.sekce);
-test('nulové sekce se hlásí jako neuvedené, ne nulovou cenou',
-  cenove.every(b => b.neuvedena && b.castka === 'není součástí této nabídky'),
-  cenove.map(b => b.castka).join(' | '));
+/* Do 17. 8. se nulová sekce hlásila větou „není součástí této nabídky";
+ * od 17. 8. se NEUVÁDÍ VŮBEC — v popisu ani v cenách (věta zůstává jen
+ * ve Wordu, kde je šablona pevná a odstavce vypustit neumí). */
+test('nulové sekce se v nabídce neuvádějí vůbec (rozhodnutí 17. 8. 2026)',
+  cenove.length === 0, cenove.map(b => b.nadpis).join(' | '));
+test('popisy neoceněných sekcí zmizely také',
+  !dN.bloky.some(b => /POVOLENÍ ZÁMĚRU \(DPZ\)|INŽENÝRSKÁ ČINNOST|KOLAUDAČ|GEODETICKÉ/.test(b.nadpis || '')),
+  dN.bloky.map(b => b.nadpis || b.text).join(' | '));
+test('obecné bloky (autorský dozor, DPH, cena nezahrnuje) zůstávají',
+  dN.bloky.some(b => /AUTORSK/.test(b.nadpis || ''))
+  && dN.bloky.some(b => /DPH/.test(b.nadpis || ''))
+  && dN.bloky.some(b => /CENA NEZAHRNUJE/.test(b.nadpis || '')));
 test('paušály zůstávají uvedené i při nulové kalkulaci',
   dN.bloky.filter(b => b.typ === 'cena' && !b.sekce).every(b => !b.neuvedena));
 test('rekapitulace nulové nabídky je prázdná', dN.rekapitulace.length === 0);
@@ -166,7 +184,7 @@ test('název souboru neobsahuje zakázané znaky', !/[\\/:*?"<>|]/.test(d.nazevS
 /* --- 8) nikdy nespadne a nic nemění --- */
 test('bez zakázky i varianty nespadne', (() => {
   const x = nabidkaProjData();
-  return x && Array.isArray(x.bloky) && x.bloky.length === NABIDKA_PROJ_DEF.length;
+  return x && Array.isArray(x.bloky) && x.bloky.length > 0;
 })());
 test('s prázdnou variantou nespadne', typeof nabidkaProjData({}, {}) === 'object');
 test('s variantou bez sekce proj nespadne', typeof nabidkaProjData({}, { data: {} }) === 'object');
